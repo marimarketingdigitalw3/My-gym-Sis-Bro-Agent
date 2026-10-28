@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useAuth, useBundle } from "@/app/providers";
 import { TrendChart, WeeklyBars } from "@/components/charts";
 import {
-  Badge, Button, Card, CardHeader, Chip, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Stat, Tabs,
+  Badge, Button, Card, CardHeader, Chip, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Stat, Tabs, useConfirm,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { EXERCISE_BY_ID } from "@/data/exercises";
@@ -255,6 +255,7 @@ function PhotosTab() {
   const [pose, setPose] = useState<ProgressPhotoRow["pose"]>("front");
   const [uploading, setUploading] = useState(false);
   const [viewing, setViewing] = useState<ProgressPhotoRow | null>(null);
+  const [ask, confirmDialog] = useConfirm();
   if (loading && !data) return <PageSkeleton />;
   if (error || !data) return <ErrorState message={error ?? "Error"} onRetry={reload} />;
 
@@ -293,11 +294,12 @@ function PhotosTab() {
       {data.length === 0 ? <EmptyState icon={<Camera className="h-5 w-5" />} title="Sin fotos" description="Las fotos pueden ayudarte a ver cambios que la báscula no muestra. Son opcionales." /> : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {data.map((p) => <PhotoTile key={p.id} photo={p} onOpen={() => setViewing(p)} onDelete={async () => {
-            if (!confirm("¿Borrar esta foto de forma permanente?")) return;
+            if (!(await ask("¿Borrar esta foto de forma permanente?", "Borrar foto"))) return;
             try { await deletePhoto(p.id, p.storage_path); setData((d) => d?.filter((x) => x.id !== p.id)); toast("Foto borrada"); } catch (e) { toast(errorMessage(e), "error"); }
           }} />)}
         </ul>
       )}
+      {confirmDialog}
       <Modal open={!!viewing} onClose={() => setViewing(null)} title={viewing ? formatLongDate(viewing.taken_on) : ""}>
         {viewing && <PhotoImage path={viewing.storage_path} className="w-full rounded-xl" />}
       </Modal>

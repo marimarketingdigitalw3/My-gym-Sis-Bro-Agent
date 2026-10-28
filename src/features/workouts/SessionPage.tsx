@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useBundle } from "@/app/providers";
 import {
-  Badge, Button, Card, Chip, ErrorState, Field, IconButton, Input, Modal, Notice, PageSkeleton, ProgressBar, Select, Textarea, cx,
+  Badge, Button, Card, Chip, ErrorState, Field, IconButton, Input, Modal, Notice, PageSkeleton, ProgressBar, Select, Textarea, cx, useConfirm,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { EXERCISE_BY_ID } from "@/data/exercises";
@@ -78,6 +78,7 @@ export default function SessionPage() {
   const [swapOpen, setSwapOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
+  const [ask, confirmDialog] = useConfirm();
   const paused = ui.pausedAt !== null;
 
   const togglePause = useCallback(() => {
@@ -259,7 +260,7 @@ export default function SessionPage() {
         <div className="flex justify-center gap-2 pt-2">
           <Button variant="ghost" size="sm" onClick={() => setFinishOpen(true)}>Terminar entrenamiento</Button>
           <Button variant="ghost" size="sm" onClick={async () => {
-            if (!confirm("¿Abandonar la sesión? Las series registradas se conservan en el historial.")) return;
+            if (!(await ask("¿Abandonar la sesión? Las series registradas se conservan en el historial.", "Abandonar"))) return;
             await abandonSession(session.id);
             navigate("/workouts");
           }}>Abandonar</Button>
@@ -271,6 +272,7 @@ export default function SessionPage() {
         options={substitutionOptions(row.exercise_id, ctx, [exerciseId])}
         onPick={(e) => { setUi((u) => ({ ...u, swaps: { ...u.swaps, [row.id]: e.id } })); setSwapOpen(false); toast(`Hoy harás ${e.name}`); }} />
 
+      {confirmDialog}
       <Modal open={listOpen} onClose={() => setListOpen(false)} title="Ejercicios de la sesión">
         <ol className="space-y-1">
           {planRows.map((r: WorkoutExerciseRow, i) => {

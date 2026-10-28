@@ -95,30 +95,33 @@ Copia `.env.example` a `.env`.
 
 ## 5. Configurar Supabase
 
-```bash
-npm i -g supabase            # o usa npx supabase
-supabase login
-supabase link --project-ref <tu-project-ref>
-supabase db push             # aplica las 4 migraciones (incluida la biblioteca de ejercicios)
-supabase functions deploy coach-chat
-supabase functions deploy delete-account
-```
+### Opción A: desde Vercel (recomendada)
 
-En el panel de Supabase:
+1. En el proyecto de Vercel: **Storage → Create Database → Supabase**. Vercel crea el proyecto de Supabase y añade `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`, que la app ya lee.
+2. En GitHub (**Settings → Secrets and variables → Actions**) añade `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` y, si quieres IA, `ANTHROPIC_API_KEY`.
+3. Ejecuta el flujo **Supabase** en la pestaña Actions (o haz push a `main` con cambios en `supabase/`). Aplica las migraciones, carga la clave del coach y despliega las Edge Functions.
+4. Vuelve a desplegar en Vercel para que el build incluya las variables nuevas.
 
-1. **Authentication → URL Configuration**: `Site URL` con tu dominio y, en *Redirect URLs*, `https://tu-dominio/login` y `https://tu-dominio/reset-password`.
-2. **Authentication → Providers → Email**: activa *Confirm email* si quieres verificación de correo.
-3. Copia la URL y la clave `anon` en `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
-
-Para desarrollo local con Docker: `supabase start`, luego `supabase db reset` y `supabase functions serve`.
-
-## 6. Configurar el proveedor de IA
+### Opción B: con la CLI
 
 ```bash
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-# opcional
-supabase secrets set COACH_MODEL=claude-opus-5-5 COACH_RATE_LIMIT_PER_HOUR=30 ALLOWED_ORIGIN=https://tu-dominio
+npx supabase login
+npx supabase link --project-ref <tu-project-ref>
+npx supabase db push
+npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+npx supabase functions deploy coach-chat
+npx supabase functions deploy delete-account
 ```
+
+### En ambos casos
+
+En el panel de Supabase, **Authentication → URL Configuration**: `Site URL` con tu dominio de Vercel y, en *Redirect URLs*, `https://tu-dominio/login` y `https://tu-dominio/reset-password`. Activa *Confirm email* en **Providers → Email** si quieres verificación de correo.
+
+Para desarrollo local con Docker: `npx supabase start`, `npx supabase db reset` y `npx supabase functions serve`.
+
+## 6. Proveedor de IA
+
+La clave se guarda solo como secreto de Supabase (`ANTHROPIC_API_KEY`) y nunca llega al navegador ni a Vercel. Opcionales: `COACH_MODEL` (por defecto `claude-opus-5-5`), `COACH_RATE_LIMIT_PER_HOUR` (30) y `ALLOWED_ORIGIN` (tu dominio, para CORS).
 
 Cómo funciona `coach-chat`:
 
@@ -131,16 +134,11 @@ Cómo funciona `coach-chat`:
 
 Para añadir otro proveedor, implementa la interfaz `ChatProvider` de `supabase/functions/_shared/ai/provider.ts` y selecciónalo en `providerFromEnv()`.
 
-## 7. Despliegue
+## 7. Despliegue en Vercel
 
-El frontend es estático:
+El proyecto incluye `vercel.json` (build de Vite, reescritura SPA hacia `index.html`, cabeceras de seguridad y caché de assets). Vercel despliega automáticamente cada push al repositorio conectado. Sin variables de Supabase, el despliegue funciona en modo demo local.
 
-```bash
-npm ci
-npm run build        # genera dist/
-```
-
-Publica `dist/` en Vercel, Netlify, Cloudflare Pages o similar, con las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en el entorno de build. Configura el *fallback* de SPA para que todas las rutas sirvan `index.html` (en Vercel y Netlify basta con una regla de reescritura a `/index.html`).
+**CI:** `.github/workflows/ci.yml` ejecuta lint, tipos, pruebas unitarias, migraciones y RLS en PostgreSQL 16, build y pruebas de extremo a extremo en cada push y pull request.
 
 ## 8. Pruebas
 
@@ -148,7 +146,7 @@ Publica `dist/` en Vercel, Netlify, Cloudflare Pages o similar, con las variable
 |---|---|
 | `npm test` (Vitest, 50 pruebas) | Integridad de datos; Mifflin-St Jeor con casos calculados a mano; déficit, mínimos seguros, menores, TCA, IMC bajo y datos incompletos; generador para principiante en casa, intermedio en gimnasio, pérdida de grasa, rodilla limitada, embarazo, tiempo disponible y días preferidos; sustituciones; progresión (subir carga, subir repeticiones, no progresar con dolor o mala recuperación, reducir); récords; ciclo con duración declarada, aprendizaje de registros, irregularidad, anticoncepción y sin fechas; prioridad de síntomas; señales de alarma; plan de comidas seguro para alergias y rechazos, porciones, sin repeticiones en el día, sustitución y lista de compras; racha con comodines; validación, límite de uso, historial, contexto mínimo, respaldo y proveedor de IA con cliente simulado |
 | `npm run test:db` (PostgreSQL 16) | 28 comprobaciones de RLS, storage y borrado en cascada |
-| `npm run test:e2e` (Playwright, 13 escenarios) | Rutas protegidas; validación de registro y onboarding; onboarding incompleto que se retoma; principiante en casa con ciclo irregular; modo entrenamiento completo; nutrición; progreso con gráficos reales; coach de respaldo y bloqueo por síntomas; ciclo; cambio de tema y persistencia tras cerrar sesión; intermedio en gimnasio con rodilla limitada y sin ciclo en escritorio; aislamiento entre cuentas; pérdida de grasa con antecedentes de TCA; borrado de datos del ciclo y de la cuenta. Comprueba móvil (390 px) y escritorio (1366 px) sin desbordamiento horizontal ni errores de consola |
+| `npm run test:e2e` (Playwright, 14 escenarios) | Rutas protegidas; validación de registro y onboarding; onboarding incompleto que se retoma; principiante en casa con ciclo irregular; modo entrenamiento completo; nutrición; progreso con gráficos reales; coach de respaldo y bloqueo por síntomas; ciclo; cambio de tema y persistencia tras cerrar sesión; intermedio en gimnasio con rodilla limitada y sin ciclo en escritorio; aislamiento entre cuentas; pérdida de grasa con antecedentes de TCA; borrado de una sesión con confirmación dentro de la página; borrado de datos del ciclo y de la cuenta. Comprueba móvil (390 px) y escritorio (1366 px) sin desbordamiento horizontal ni errores de consola |
 
 ## 9. Limitaciones conocidas
 

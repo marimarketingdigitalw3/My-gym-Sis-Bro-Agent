@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useBundle, useUserData } from "@/app/providers";
 import {
-  Badge, Button, Card, CardHeader, Chip, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Tabs,
+  Badge, Button, Card, CardHeader, Chip, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Tabs, useConfirm,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { EXERCISE_BY_ID } from "@/data/exercises";
@@ -296,6 +296,7 @@ function RegenerateModal({ open, onClose, onDone }: { open: boolean; onClose: ()
 function HistoryView() {
   const bundle = useBundle();
   const toast = useToast();
+  const [ask, confirmDialog] = useConfirm();
   const { data, loading, error, reload, setData } = useAsync(async () => {
     const [sessions, sets] = await Promise.all([listSessions(200), allSets()]);
     return { sessions: sessions.filter((s) => s.status !== "in_progress" || s.started_at.slice(0, 10) === todayISO()), sets };
@@ -305,6 +306,7 @@ function HistoryView() {
   if (!data.sessions.length) return <EmptyState title="Aún no hay sesiones" description="Cuando completes tu primer entrenamiento, lo verás aquí con todas sus series." />;
   return (
     <ul className="space-y-3">
+      {confirmDialog}
       {data.sessions.map((s) => {
         const sets = data.sets.filter((x) => x.session_id === s.id && x.completed);
         const byEx = [...new Set(sets.map((x) => x.exercise_id))];
@@ -322,7 +324,7 @@ function HistoryView() {
                   </Badge>
                   {s.status === "in_progress" && <Link to={`/workouts/session/${s.id}`}><Button size="sm" variant="ghost">Continuar</Button></Link>}
                   <IconButton label="Borrar sesión" onClick={async () => {
-                    if (!confirm("¿Borrar esta sesión y sus series?")) return;
+                    if (!(await ask("¿Borrar esta sesión y sus series?", "Borrar sesión"))) return;
                     try { await deleteSession(s.id); setData((d) => d && { ...d, sessions: d.sessions.filter((x) => x.id !== s.id) }); toast("Sesión borrada"); } catch (e) { toast(errorMessage(e), "error"); }
                   }}><Trash2 className="h-4 w-4" /></IconButton>
                 </div>

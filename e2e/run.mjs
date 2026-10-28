@@ -363,6 +363,18 @@ await test("pérdida de grasa con antecedentes de TCA: sin cifras de calorías n
   await context.close();
 });
 
+await test("borrar una sesión con confirmación dentro de la página", async () => {
+  const { page } = mar;
+  await page.goto(`${BASE}/workouts`);
+  await page.getByRole("tab", { name: "Historial" }).click();
+  await page.getByRole("button", { name: "Borrar sesión" }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Cancelar" }).click();
+  await page.getByText("Completada").first().waitFor();
+  await page.getByRole("button", { name: "Borrar sesión" }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Borrar sesión" }).click();
+  await page.getByText("Sesión borrada").waitFor();
+});
+
 await test("borrar datos de ciclo y borrar cuenta", async () => {
   const { page, context } = mar;
   await page.goto(`${BASE}/cycle`);

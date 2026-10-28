@@ -2,7 +2,7 @@
 import clsx from "clsx";
 import { Loader2, X } from "lucide-react";
 import {
-  forwardRef, useEffect, useId, useRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode,
+  forwardRef, useCallback, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode,
   type SelectHTMLAttributes, type TextareaHTMLAttributes,
 } from "react";
 
@@ -362,4 +362,25 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
       {hint && <p className="text-xs text-muted">{hint}</p>}
     </div>
   );
+}
+
+/**
+ * Confirmación dentro de la página (en lugar de window.confirm, que algunos navegadores y visores bloquean).
+ * Uso: const [ask, dialog] = useConfirm(); if (!(await ask("¿Borrar?"))) return; … y renderizar {dialog}.
+ */
+export function useConfirm(): [(message: string, confirmLabel?: string) => Promise<boolean>, ReactNode] {
+  const [state, setState] = useState<{ message: string; label: string; resolve: (ok: boolean) => void } | null>(null);
+  const ask = useCallback((message: string, confirmLabel = "Confirmar") =>
+    new Promise<boolean>((resolve) => setState({ message, label: confirmLabel, resolve })), []);
+  const close = (ok: boolean) => {
+    state?.resolve(ok);
+    setState(null);
+  };
+  const dialog = (
+    <Modal open={!!state} onClose={() => close(false)} title="Confirmar"
+      footer={<><Button variant="ghost" onClick={() => close(false)}>Cancelar</Button><Button variant="danger" onClick={() => close(true)}>{state?.label}</Button></>}>
+      <p className="text-sm">{state?.message}</p>
+    </Modal>
+  );
+  return [ask, dialog];
 }
