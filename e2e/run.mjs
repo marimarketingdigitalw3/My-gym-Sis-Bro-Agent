@@ -320,6 +320,28 @@ await test("intermedio en gimnasio con limitación de rodilla y sin ciclo (escri
   await page.goto(`${BASE}/coach`);
   assert(!(await page.getByText("¿Qué entreno hoy?").locator("xpath=ancestor::aside").count()), "aparecen conversaciones ajenas");
   await page.screenshot({ path: `${SHOTS}11-dashboard-bro-desktop.png` });
+
+  // Agenda por días y horarios: cambiar la hora de entreno.
+  await page.goto(`${BASE}/workouts`);
+  await page.getByText("Tu semana de entrenamiento").waitFor();
+  await page.getByRole("button", { name: /Cambiar hora/ }).click();
+  await page.getByLabel("Hora de inicio").fill("07:00");
+  await page.getByLabel(/todos los días de entreno/).check();
+  await page.getByRole("dialog").getByRole("button", { name: "Guardar" }).click();
+  await page.getByText("Horario guardado").waitFor();
+  assert((await page.getByText("7:00 a. m.").count()) >= 4, "la hora nueva no se aplicó a todos los días");
+
+  // Gym Bro: horario de comidas y suplementos.
+  await page.goto(`${BASE}/nutrition`);
+  await page.getByRole("tab", { name: "Horario y déficit" }).click();
+  await page.getByText("Tu ventana de comidas de hoy").waitFor();
+  await page.getByText("Empieza a comer").waitFor();
+  await page.getByRole("tab", { name: "Suplementos" }).click();
+  await page.getByRole("button", { name: "Creatina monohidratada" }).click();
+  await page.getByRole("button", { name: "Marcar Creatina monohidratada como tomado" }).click();
+  await page.getByText("1 de 1 tomados").waitFor();
+  await noHorizontalScroll(page, "suplementos");
+  await page.screenshot({ path: `${SHOTS}13-supplements-bro.png`, fullPage: true });
   await context.close();
 });
 
@@ -360,6 +382,7 @@ await test("pérdida de grasa con antecedentes de TCA: sin cifras de calorías n
   await page.getByRole("tab", { name: "Plan semanal" }).click();
   await page.locator("li p.font-semibold").first().waitFor();
   await page.screenshot({ path: `${SHOTS}12-nutrition-no-numbers.png`, fullPage: true });
+  assert(!(await page.getByRole("tab", { name: "Suplementos" }).count()), "el tema neutro muestra suplementos");
   await context.close();
 });
 

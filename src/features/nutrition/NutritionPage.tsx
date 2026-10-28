@@ -23,11 +23,13 @@ import {
 import type { MealLogRow, MealPlanDay, NutritionPrefsRow } from "@/types/db";
 import type { MealType, Recipe } from "@/types/domain";
 import { WaterTracker } from "./WaterTracker";
+import { MealTimingTab, SupplementsTab } from "./RhythmTools";
 
-type TabKey = "today" | "plan" | "grocery" | "history";
+type TabKey = "today" | "plan" | "grocery" | "history" | "supplements" | "timing";
 
 const DEFAULT_PREFS: Omit<NutritionPrefsRow, "user_id" | "updated_at"> = {
   diet: "omnivore", eating_pattern: null, allergens: [], dislikes: [], meals_per_day: 4, budget: "medium", cooking_minutes: 30, cuisines: ["colombian"], wants_meal_prep: false,
+  supplements: [], wake_time: null, sleep_time: null,
 };
 
 export default function NutritionPage() {
@@ -40,6 +42,8 @@ export default function NutritionPage() {
   const caloriesVisible = showCalories(bundle, estimate);
   const prefs = bundle.nutrition ?? { ...DEFAULT_PREFS, user_id: bundle.profile.id, updated_at: "" };
   const targets = estimate.mode === "no_numbers" ? null : estimate.targets;
+  // Suplementos y horario de comidas son parte de las experiencias Gym Sis y Gym Bro.
+  const gymTheme = bundle.profile.theme === "sis" || bundle.profile.theme === "bro";
 
   const { data, loading, error, reload, setData } = useAsync(async () => {
     const [plan, logs, water] = await Promise.all([getMealPlan(weekStart), listMealLogs(addDays(today, -27), today), getWater(today)]);
@@ -72,7 +76,9 @@ export default function NutritionPage() {
     <div>
       <PageHeader title="Nutrición" subtitle="Plan flexible, comida real y sin culpas." />
       <div className="mb-5"><Tabs label="Secciones de nutrición" value={tab} onChange={setTab} items={[
-        { value: "today", label: "Hoy" }, { value: "plan", label: "Plan semanal" }, { value: "grocery", label: "Lista de compras" }, { value: "history", label: "Historial" },
+        { value: "today", label: "Hoy" }, { value: "plan", label: "Plan semanal" },
+        ...(gymTheme ? [{ value: "timing" as const, label: "Horario y déficit" }, { value: "supplements" as const, label: "Suplementos" }] : []),
+        { value: "grocery", label: "Lista de compras" }, { value: "history", label: "Historial" },
       ]} /></div>
 
       {estimate.warnings.length > 0 && <div className="mb-4 space-y-2">{estimate.warnings.map((w) => <Notice key={w} tone="warning">{w}</Notice>)}</div>}
@@ -87,6 +93,8 @@ export default function NutritionPage() {
           : <EmptyState icon={<RefreshCw className="h-5 w-5" />} title="Aún no tienes plan esta semana" description="Lo creamos según tu dieta, alergias, presupuesto y tiempo para cocinar." action={<Button onClick={() => ensurePlan()}>Crear plan semanal</Button>} />
       )}
       {tab === "grocery" && (plan ? <GroceryTab days={plan.days} weekStart={weekStart} /> : <EmptyState title="Primero crea tu plan semanal" action={<Button onClick={() => ensurePlan()}>Crear plan</Button>} />)}
+      {tab === "timing" && gymTheme && <MealTimingTab logsToday={data.logs.filter((l) => l.logged_on === today)} estimate={estimate} caloriesVisible={caloriesVisible} />}
+      {tab === "supplements" && gymTheme && <SupplementsTab />}
       {tab === "history" && <HistoryTab logs={data.logs} today={today} caloriesVisible={caloriesVisible} kcalTarget={targets?.kcal ?? null} />}
     </div>
   );

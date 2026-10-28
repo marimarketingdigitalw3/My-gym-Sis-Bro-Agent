@@ -1,7 +1,7 @@
 // Estado de ánimo de Gym Bot según el progreso del día y de la semana.
 import { addDays, startOfWeek } from "./dates";
 
-export type GymBotMood = "feliz" | "motivado" | "cansado" | "triste" | "enojado" | "tranquilo";
+export type GymBotMood = "celebrando" | "feliz" | "motivado" | "cansado" | "triste" | "enojado" | "tranquilo";
 
 export interface MoodInput {
   today: string;
@@ -22,6 +22,7 @@ export interface MoodResult {
 }
 
 export const MOOD_LABELS: Record<GymBotMood, string> = {
+  celebrando: "Celebrando",
   feliz: "Feliz",
   motivado: "Motivado",
   cansado: "Cansado",
@@ -36,6 +37,13 @@ export function computeMood(i: MoodInput): MoodResult {
   const plannedToday = i.plannedWeekdays.includes(i.todayIdx);
 
   if (doneToday) {
+    const doneThisWeek = [...i.completedDates].filter((d) => d >= weekStart && d <= i.today).length;
+    if (i.plannedWeekdays.length > 0 && doneThisWeek >= i.plannedWeekdays.length) {
+      return { mood: "celebrando", message: "¡Cumpliste todas las sesiones de la semana! Esto se celebra." };
+    }
+    if (i.streak > 0 && i.streak % 7 === 0) {
+      return { mood: "celebrando", message: `¡${i.streak} días de racha! Eres imparable.` };
+    }
     return { mood: "feliz", message: i.streak > 1 ? `¡Sesión lista! Ya son ${i.streak} días de racha.` : "¡Sesión lista! Hoy cumpliste." };
   }
 

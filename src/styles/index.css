@@ -214,33 +214,3 @@
   }
 }
 
-/* Gym Bot: animaciones según el estado de ánimo (se desactivan con reducción de movimiento). */
-.gb-body,
-.gb-lift,
-.gb-tear,
-.gb-zz,
-.gb-sparkle {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-}
-.gb-feliz .gb-body { animation: gb-hop 1.5s ease-in-out infinite; }
-.gb-feliz .gb-sparkle { transform-origin: 50% 50%; animation: gb-twinkle 1.5s ease-in-out infinite; }
-.gb-motivado .gb-lift { animation: gb-lift 1.3s ease-in-out infinite; }
-.gb-motivado .gb-body { animation: gb-bob 1.3s ease-in-out infinite; }
-.gb-cansado .gb-body { animation: gb-sway 3.4s ease-in-out infinite; }
-.gb-cansado .gb-zz { animation: gb-float 2.6s ease-in-out infinite; }
-.gb-triste .gb-body { animation: gb-droop 3s ease-in-out infinite; }
-.gb-triste .gb-tear { animation: gb-drip 2.4s ease-in infinite; }
-.gb-enojado .gb-body { animation: gb-shake 2s ease-in-out infinite; }
-.gb-tranquilo .gb-body { animation: gb-breathe 3.6s ease-in-out infinite; }
-
-@keyframes gb-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14px) scale(1.02, .98); } 60% { transform: translateY(0) scale(1.03, .97); } }
-@keyframes gb-twinkle { 0%, 100% { opacity: .3; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.1); } }
-@keyframes gb-lift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-34px); } }
-@keyframes gb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-@keyframes gb-sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-@keyframes gb-float { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
-@keyframes gb-droop { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(3px) scaleY(.97); } }
-@keyframes gb-drip { 0% { opacity: 0; transform: translateY(-4px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
-@keyframes gb-shake { 0%, 60%, 100% { transform: translateX(0); } 65%, 75% { transform: translateX(-4px) rotate(-2deg); } 70%, 80% { transform: translateX(4px) rotate(2deg); } }
-@keyframes gb-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }

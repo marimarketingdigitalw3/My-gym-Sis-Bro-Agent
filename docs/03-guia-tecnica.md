@@ -158,3 +158,10 @@ El proyecto incluye `vercel.json` (build de Vite, reescritura SPA hacia `index.h
 - **Modo demo local.** Útil para probar y presentar la app, pero los datos viven en el navegador y no son una solución de producción.
 - **Tamaño del bundle.** Recharts ocupa ~150 kB comprimidos en un chunk separado que solo se carga en pantallas con gráficos.
 - **Notificaciones** (recordatorios) y **foto de comida con IA** quedan para una siguiente iteración.
+
+## Horarios, suplementos y mascota
+
+- **Agenda de entrenos**: cada día del plan guarda su hora en `workout_plans.schedule[].time` ("HH:MM"). Si falta, se usa el horario preferido del cuestionario (`lib/schedule.ts`).
+- **Horario de comidas y déficit** (solo temas Gym Sis y Gym Bro): `lib/mealTiming.ts` calcula la ventana de comidas según objetivo, hora de despertar y de dormir (`nutrition_preferences.wake_time` y `sleep_time`) y el entreno del día. Se desactiva con antecedentes de TCA, embarazo o posparto y en menores de edad.
+- **Suplementos** (solo Gym Sis y Gym Bro): catálogo y horas sugeridas en `lib/mealTiming.ts`; los elegidos se guardan en `nutrition_preferences.supplements` y las tomas diarias en `supplement_logs` (con RLS). Migración: `20261029000001_supplements_and_meal_timing.sql`.
+- **Mascota Gym Bot**: componente web `components/gymbot/gym-bot-mascot.js` (7 ánimos, parpadeo, giro 3D y reacción al tocarla). El ánimo sale de `lib/gymbotMood.ts` según el progreso.

@@ -38,6 +38,7 @@ insert into workout_sessions (id, user_id, plan_id, title) values ('20000000-000
 insert into exercise_sets (session_id, user_id, exercise_id, set_number, reps, weight_kg) values ('20000000-0000-0000-0000-00000000000a', auth.uid(), 'test-squat', 1, 10, 20);
 insert into cycle_logs (user_id, logged_on, period_start, symptoms) values (auth.uid(), current_date, true, '{cramps}');
 insert into progress_measurements (user_id, measured_on, weight_kg) values (auth.uid(), current_date, 60);
+insert into supplement_logs (user_id, logged_on, supplement) values (auth.uid(), current_date, 'creatine');
 insert into chat_conversations (id, user_id) values ('30000000-0000-0000-0000-00000000000a', auth.uid());
 insert into chat_messages (conversation_id, user_id, role, content) values ('30000000-0000-0000-0000-00000000000a', auth.uid(), 'user', 'Hola');
 select pg_temp.assert((select count(*) = 1 from workout_exercises), 'Ana ve su ejercicio del plan');
@@ -62,6 +63,7 @@ select pg_temp.assert((select count(*) = 0 from workout_plans), 'Beto no ve plan
 select pg_temp.assert((select count(*) = 0 from workout_exercises), 'Beto no ve ejercicios de planes ajenos');
 select pg_temp.assert((select count(*) = 0 from exercise_sets), 'Beto no ve series ajenas');
 select pg_temp.assert((select count(*) = 0 from cycle_logs), 'Beto no ve datos de ciclo ajenos');
+select pg_temp.assert((select count(*) = 0 from supplement_logs), 'Beto no ve suplementos ajenos');
 select pg_temp.assert((select count(*) = 0 from progress_measurements), 'Beto no ve medidas ajenas');
 select pg_temp.assert((select count(*) = 0 from chat_messages), 'Beto no ve conversaciones ajenas');
 select pg_temp.assert((select count(*) > 0 from exercise_library), 'la biblioteca de ejercicios es pública para usuarios');
@@ -121,6 +123,7 @@ select pg_temp.assert((select count(*) = 0 from workout_plans where user_id = '0
 select pg_temp.assert((select count(*) = 0 from exercise_sets where user_id = '00000000-0000-0000-0000-00000000000a'), 'borrar la cuenta elimina series');
 select pg_temp.assert((select count(*) = 0 from chat_messages where user_id = '00000000-0000-0000-0000-00000000000a'), 'borrar la cuenta elimina el chat');
 select pg_temp.assert((select count(*) = 0 from cycle_logs where user_id = '00000000-0000-0000-0000-00000000000a'), 'borrar la cuenta elimina el ciclo');
+select pg_temp.assert((select count(*) = 0 from supplement_logs where user_id = '00000000-0000-0000-0000-00000000000a'), 'borrar la cuenta elimina los suplementos');
 select pg_temp.assert((select count(*) = 1 from profiles), 'el otro usuario conserva su perfil');
 
 \o

@@ -11,6 +11,10 @@ describe("computeMood", () => {
   it("feliz si ya entrenó hoy", () => {
     expect(computeMood({ ...base, completedDates: new Set(["2026-10-28"]) }).mood).toBe("feliz");
   });
+  it("celebrando al completar la semana", () => {
+    const r = computeMood({ ...base, plannedWeekdays: [0, 2], completedDates: new Set(["2026-10-26", "2026-10-28"]) });
+    expect(r.mood).toBe("celebrando");
+  });
   it("cansado con poca energía o poco sueño", () => {
     expect(computeMood({ ...base, recovery: { energy: 2, sleep_hours: 8, soreness: 1 } }).mood).toBe("cansado");
     expect(computeMood({ ...base, recovery: { energy: 4, sleep_hours: 5, soreness: 1 } }).mood).toBe("cansado");

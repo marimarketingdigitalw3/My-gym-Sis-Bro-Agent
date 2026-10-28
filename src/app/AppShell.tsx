@@ -4,7 +4,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { db } from "@/services/data";
 import { useBundle } from "./providers";
 import { BrandMark } from "@/components/BrandMark";
-import { GymBotIcon } from "@/components/GymBot";
+import { GymBotLive } from "@/components/GymBot";
 import { MOOD_LABELS } from "@/lib/gymbotMood";
 import { useState } from "react";
 import { GymBotMoodProvider, useGymBotMood } from "./gymbot";
@@ -42,15 +42,14 @@ export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
 }
 
 /** Gym Bot animado según tu progreso; al tocarlo muestra lo que piensa. */
-export function GymBotBuddy({ size = 48 }: { size?: number }) {
+export function GymBotBuddy({ size = 52 }: { size?: number }) {
   const mood = useGymBotMood();
   const [open, setOpen] = useState(false);
   const label = mood ? `Gym Bot está ${MOOD_LABELS[mood.mood].toLowerCase()}: ${mood.message}` : "Gym Bot";
   return (
     <div className="relative shrink-0">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-label={label} aria-expanded={open}
-        className="block rounded-[30%] transition active:scale-95">
-        <GymBotIcon size={size} mood={mood?.mood} animate className="shadow-md" />
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-label={label} aria-expanded={open} className="block">
+        <GymBotLive size={size} mood={mood?.mood} />
       </button>
       {open && mood && (
         <p role="status" className="absolute left-0 top-full z-40 mt-2 w-64 rounded-3xl rounded-tl-md border border-border/60 bg-surface p-3 text-sm shadow-card">

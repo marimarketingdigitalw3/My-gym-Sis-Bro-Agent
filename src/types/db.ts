@@ -111,7 +111,20 @@ export interface NutritionPrefsRow {
   cooking_minutes: number;
   cuisines: CuisineStyle[];
   wants_meal_prep: boolean;
+  /** Claves del catálogo de suplementos que la persona toma. */
+  supplements: string[];
+  /** "HH:MM" */
+  wake_time: string | null;
+  sleep_time: string | null;
   updated_at: string;
+}
+
+export interface SupplementLogRow {
+  id: string;
+  user_id: string;
+  logged_on: string;
+  supplement: string;
+  taken_at: string;
 }
 
 export interface CycleSettingsRow {
@@ -134,6 +147,8 @@ export interface WorkoutDayMeta {
   warmup: string[];
   cooldown: string[];
   estimatedMinutes: number;
+  /** Hora de inicio "HH:MM" elegida por la persona. Si falta, se usa su horario preferido. */
+  time?: string;
 }
 
 export interface WorkoutPlanRow {
@@ -335,6 +350,7 @@ export interface Tables {
   meal_plans: MealPlanRow;
   meal_logs: MealLogRow;
   water_logs: WaterLogRow;
+  supplement_logs: SupplementLogRow;
   progress_measurements: MeasurementRow;
   progress_photos: ProgressPhotoRow;
   recovery_logs: RecoveryLogRow;

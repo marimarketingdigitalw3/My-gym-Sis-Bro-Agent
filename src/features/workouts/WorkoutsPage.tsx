@@ -1,14 +1,15 @@
-import { Info, Pencil, Play, Plus, RefreshCw, Repeat, Trash2 } from "lucide-react";
+import { Clock, Info, Moon, Pencil, Play, Plus, RefreshCw, Repeat, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useBundle, useUserData } from "@/app/providers";
 import {
-  Badge, Button, Card, CardHeader, Chip, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Tabs, useConfirm,
+  Badge, Button, Card, CardHeader, cx, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Tabs, useConfirm,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { EXERCISE_BY_ID } from "@/data/exercises";
 import { trainingClearance } from "@/lib/clearance";
-import { formatLongDate, todayISO, weekdayIndex, WEEKDAYS } from "@/lib/dates";
+import { addDays, formatLongDate, startOfWeek, todayISO, weekdayIndex, WEEKDAYS } from "@/lib/dates";
+import { addMinutes, dayStartTime, formatTime, TIME_RE } from "@/lib/schedule";
 import { formatDuration, MUSCLE_LABELS } from "@/lib/labels";
 import { substitutionOptions } from "@/lib/workouts/generator";
 import { errorMessage, useAsync } from "@/lib/useAsync";
@@ -16,7 +17,7 @@ import { generatorInputFromBundle, selectionContextFromBundle } from "@/services
 import { saveOnboardingSection } from "@/services/profile";
 import { getRecovery } from "@/services/tracking";
 import {
-  addPlanExercise, allSets, deleteSession, getActivePlan, listSessions, regeneratePlan, removePlanExercise, startSession, updatePlanExercise,
+  addPlanExercise, allSets, deleteSession, getActivePlan, listSessions, regeneratePlan, removePlanExercise, startSession, updatePlanExercise, updatePlanSchedule,
 } from "@/services/workouts";
 import type { WorkoutExerciseRow } from "@/types/db";
 import { ExercisePicker } from "./ExercisePicker";
@@ -49,6 +50,7 @@ function PlanView() {
   const [adding, setAdding] = useState(false);
   const [regenOpen, setRegenOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
   const ctx = useMemo(() => selectionContextFromBundle(bundle), [bundle]);
 
   if (loading && !data) return <PageSkeleton />;
@@ -67,6 +69,7 @@ function PlanView() {
   }
 
   const schedule = active.plan.schedule;
+  const preferredTime = bundle.onboarding?.lifestyle?.preferredTime;
   const selected = day ?? (schedule.find((d) => d.weekday >= todayIdx)?.dayIndex ?? schedule[0]?.dayIndex ?? 0);
   const meta = schedule.find((d) => d.dayIndex === selected);
   const exercises = active.exercises.filter((e) => e.day_index === selected).sort((a, b) => a.position - b.position);
@@ -100,13 +103,44 @@ function PlanView() {
         </details>
       </Card>
 
-      <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Días del plan">
-        {schedule.map((d) => (
-          <Chip key={d.dayIndex} selected={selected === d.dayIndex} onClick={() => setDay(d.dayIndex)}>
-            {WEEKDAYS[d.weekday].slice(0, 3)} · {d.title}{d.weekday === todayIdx ? " (hoy)" : ""}
-          </Chip>
-        ))}
-      </div>
+      {/* Agenda semanal: cada día con su rutina y su horario */}
+      <Card className="p-3 sm:p-4">
+        <p className="px-2 pb-2 pt-1 text-sm font-semibold">Tu semana de entrenamiento</p>
+        <ol className="space-y-1.5" aria-label="Días del plan">
+          {WEEKDAYS.map((name, wd) => {
+            const d = schedule.find((x) => x.weekday === wd);
+            const date = addDays(startOfWeek(todayISO()), wd);
+            const isToday = wd === todayIdx;
+            if (!d) {
+              return (
+                <li key={name} className={cx("flex items-center gap-3 rounded-3xl px-3 py-2.5 text-sm text-muted", isToday && "bg-surface-2/70")}>
+                  <DayBadge name={name} date={date} today={isToday} />
+                  <span className="flex items-center gap-1.5"><Moon className="h-4 w-4" aria-hidden /> Descanso</span>
+                </li>
+              );
+            }
+            const start = dayStartTime(d, preferredTime);
+            const sel = selected === d.dayIndex;
+            return (
+              <li key={name}>
+                <button type="button" onClick={() => setDay(d.dayIndex)} aria-pressed={sel}
+                  className={cx("flex w-full items-center gap-3 rounded-3xl border px-3 py-2.5 text-left transition",
+                    sel ? "border-primary-strong/40 bg-primary-strong/10" : "border-transparent hover:bg-surface-2/70")}>
+                  <DayBadge name={name} date={date} today={isToday} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{d.title}{isToday ? " (hoy)" : ""}</span>
+                    <span className="block truncate text-xs text-muted">{d.focus}</span>
+                  </span>
+                  <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
+                    {formatTime(start)}
+                    <span className="block font-normal text-muted">{d.estimatedMinutes} min</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </Card>
 
       {meta && (
         <Card>
@@ -115,6 +149,12 @@ function PlanView() {
               <p className="text-sm text-muted">{WEEKDAYS[meta.weekday]}</p>
               <h2 className="text-2xl font-semibold">{meta.title}</h2>
               <p className="text-sm text-muted">{meta.focus} · ~{meta.estimatedMinutes} min</p>
+              <button type="button" onClick={() => setTimeOpen(true)}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-sm font-semibold hover:bg-border/60">
+                <Clock className="h-4 w-4" aria-hidden />
+                {formatTime(dayStartTime(meta, preferredTime))} a {formatTime(addMinutes(dayStartTime(meta, preferredTime), meta.estimatedMinutes))}
+                <span className="sr-only">Cambiar hora</span><Pencil className="h-3.5 w-3.5 text-muted" aria-hidden />
+              </button>
             </div>
             <Button onClick={start} loading={busy} disabled={clearance.status === "blocked" || exercises.length === 0}><Play className="h-4 w-4" /> Empezar sesión</Button>
           </div>
@@ -171,6 +211,20 @@ function PlanView() {
           <li>Nunca progreses con dolor: usa Sustituir y, si el dolor persiste, consulta a un profesional.</li>
         </ul>
       </Card>
+
+      {timeOpen && meta && (
+        <TimeModal title={`Hora del ${WEEKDAYS[meta.weekday].toLowerCase()}`} initial={dayStartTime(meta, preferredTime)}
+          onClose={() => setTimeOpen(false)}
+          onSave={async (time, allDays) => {
+            const next = schedule.map((d) => (allDays || d.dayIndex === meta.dayIndex ? { ...d, time } : d));
+            try {
+              await updatePlanSchedule(active.plan.id, next);
+              setData((x) => x && x.active ? { ...x, active: { ...x.active, plan: { ...x.active.plan, schedule: next } } } : x);
+              setTimeOpen(false);
+              toast("Horario guardado");
+            } catch (e) { toast(errorMessage(e), "error"); }
+          }} />
+      )}
 
       {editing && <EditExerciseModal row={editing} onClose={() => setEditing(null)} onSaved={(r) => { patchLocal(r.id, r); setEditing(null); toast("Cambios guardados"); }} />}
 
@@ -343,5 +397,45 @@ function HistoryView() {
         );
       })}
     </ul>
+  );
+}
+
+function DayBadge({ name, date, today }: { name: string; date: string; today: boolean }) {
+  return (
+    <span className={cx("grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-center leading-none",
+      today ? "bg-primary-strong text-on-primary" : "bg-surface-2 text-text")}>
+      <span className="text-[10px] font-semibold uppercase">{name.slice(0, 3)}</span>
+      <span className="-mt-2 text-base font-semibold tabular-nums">{Number(date.slice(8, 10))}</span>
+    </span>
+  );
+}
+
+function TimeModal({ title, initial, onClose, onSave }: { title: string; initial: string; onClose: () => void; onSave: (time: string, allDays: boolean) => Promise<void> }) {
+  const [time, setTime] = useState(initial);
+  const [all, setAll] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const valid = TIME_RE.test(time);
+  return (
+    <Modal open onClose={onClose} title={title}>
+      <form className="space-y-4" onSubmit={async (e) => {
+        e.preventDefault();
+        if (!valid) return;
+        setSaving(true);
+        await onSave(time, all);
+        setSaving(false);
+      }}>
+        <Field label="Hora de inicio" htmlFor="day-time" error={valid ? undefined : "Usa el formato HH:MM."}>
+          <Input id="day-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
+        </Field>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} className="h-4 w-4" />
+          Usar esta hora para todos los días de entreno
+        </label>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" loading={saving} disabled={!valid}>Guardar</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

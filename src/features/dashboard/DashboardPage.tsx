@@ -1,6 +1,6 @@
 import { ArrowRight, Bot, CalendarDays, CalendarHeart, Check, CheckCircle2, ChevronRight, Dumbbell, Flame, Snowflake, Target, Trophy, UtensilsCrossed } from "lucide-react";
 import { AthleteArt } from "@/components/AthleteArt";
-import { GymBotMascot } from "@/components/GymBot";
+import { GymBotLive } from "@/components/GymBot";
 import { useGymBotMood } from "@/app/gymbot";
 import { MOOD_LABELS } from "@/lib/gymbotMood";
 import { Link, useNavigate } from "react-router-dom";
@@ -16,6 +16,7 @@ import { computeStreak, CHALLENGE_DAYS, weeklyCompletion } from "@/lib/consisten
 import { cycleTrainingSuggestion, estimateCycle, PHASE_INFO } from "@/lib/cycle";
 import { addDays, formatLongDate, startOfWeek, todayISO, weekdayIndex, WEEKDAYS_SHORT } from "@/lib/dates";
 import { formatWeight } from "@/lib/labels";
+import { dayStartTime, formatTime } from "@/lib/schedule";
 import { sumMacros } from "@/lib/nutrition";
 import { personalRecords } from "@/lib/workouts/progression";
 import { GOAL_LABELS, primaryGoal } from "@/lib/userBundle";
@@ -104,7 +105,7 @@ export default function DashboardPage() {
           </h1>
         </div>
         <div className="flex shrink-0 flex-col items-center gap-2">
-          <GymBotMascot mood={mood?.mood} animate={Boolean(mood)} className="h-28 w-auto sm:h-32" />
+          <GymBotLive mood={mood?.mood} size={124} />
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-surface px-3 py-1.5 text-sm font-semibold shadow-sm" title="Racha actual">
             <Flame className="h-4 w-4 text-headline" aria-hidden /> {streak.streak} <span className="text-xs font-medium text-muted">días</span>
           </span>
@@ -142,7 +143,7 @@ export default function DashboardPage() {
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full opacity-80 blur-2xl"
             style={{ background: "radial-gradient(circle at 30% 30%, rgb(var(--primary) / .9), rgb(var(--accent) / .9) 55%, transparent 72%)" }} />
           <div className="relative p-5 sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">{todayDay ? "Entrenamiento de hoy" : "Hoy"}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">{todayDay ? `Entrenamiento de hoy · ${formatTime(dayStartTime(todayDay, bundle.onboarding?.lifestyle?.preferredTime))}` : "Hoy"}</p>
             <h2 className="mt-1 text-2xl font-semibold">{clearance.status === "blocked" ? "Entrenamiento en pausa" : todayDay ? todayDay.title : "Día de descanso"}</h2>
             <p className="text-sm text-muted">{todayDay ? todayDay.focus : "Camina, estira o descansa."}</p>
             <div className="mt-5 flex gap-6 text-sm">
