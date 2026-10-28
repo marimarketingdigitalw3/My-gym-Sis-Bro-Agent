@@ -26,6 +26,7 @@ export default {
       fontFamily: {
         display: "var(--font-display)",
         body: "var(--font-body)",
+        logo: ["Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: { card: "var(--radius-card)" },
       boxShadow: { card: "var(--shadow-card)" },

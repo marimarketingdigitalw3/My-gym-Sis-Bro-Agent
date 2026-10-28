@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { DemoBadge } from "@/app/AppShell";
 import { BrandMark } from "@/components/BrandMark";
-import { HeroArt } from "@/components/HeroArt";
+import { GymBotMascot, GymBotWordmark } from "@/components/GymBot";
 import { Button, Field, Input, Notice } from "@/components/ui";
 import { db } from "@/services/data";
 import { errorMessage } from "@/lib/useAsync";
@@ -19,7 +19,10 @@ function AuthLayout({ title, subtitle, children }: { title: string; subtitle: st
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="hero-surface relative m-4 hidden overflow-hidden rounded-[2.25rem] shadow-card lg:flex lg:flex-col lg:justify-between lg:p-12">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">Entrena a tu manera</p>
-        <HeroArt className="mx-auto w-full max-w-md" />
+        <div className="flex flex-col items-center gap-3">
+          <GymBotMascot shadow className="w-56 drop-shadow-xl xl:w-64" />
+          <GymBotWordmark underline className="text-6xl" />
+        </div>
         <div>
           <p className="font-display text-4xl font-semibold leading-tight">Fuerza, constancia y <em className="[font-style:var(--display-em-style)]">bienestar</em> con un plan hecho para ti.</p>
           <p className="mt-3 max-w-md text-white/80">Entrenamientos según tu equipo y tu nivel, nutrición flexible y un coach que conoce tu progreso.</p>

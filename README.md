@@ -1,4 +1,6 @@
-# My Gym/Sis · Gym Bro
+# GYM BOT
+
+App de entrenamiento con IA. Temas: My Gym/Sis, Gym Bro y neutro.
 
 Aplicación de fitness personalizada: entrenamiento, nutrición, progreso, bienestar del ciclo y un coach con IA. Se adapta a los objetivos, el nivel, el equipo, las limitaciones y el estilo de vida de cada persona.
 

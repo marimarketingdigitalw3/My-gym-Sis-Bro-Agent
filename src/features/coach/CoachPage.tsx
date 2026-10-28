@@ -7,20 +7,15 @@ import { Avatar } from "@/app/AppShell";
 import { Badge, Button, IconButton, Modal, Notice, Skeleton, Textarea, cx } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { errorMessage, useAsync } from "@/lib/useAsync";
+import { GymBotIcon } from "@/components/GymBot";
 import { db } from "@/services/data";
 import { deleteConversation, listConversations, listMessages, sendCoachMessage } from "@/services/tracking";
 import type { ChatConversationRow, ChatMessageRow } from "@/types/db";
 import { MAX_MESSAGE_CHARS } from "../../../supabase/functions/_shared/coach.ts";
 
-/** Identidad visual del coach: orbe iridiscente. */
+/** Identidad visual del coach: la mascota Gym Bot. */
 function Orb({ size = 36 }: { size?: number }) {
-  return (
-    <span aria-hidden className="inline-block shrink-0 rounded-full shadow-[0_6px_18px_-6px_rgb(79_70_229/0.6)]"
-      style={{
-        width: size, height: size,
-        background: "radial-gradient(circle at 30% 28%, #ffffff 0%, #9cc8ff 22%, #5b7cfa 48%, #b46cf0 72%, #ffb38a 100%)",
-      }} />
-  );
+  return <GymBotIcon size={size} className="shadow-[0_6px_18px_-8px_rgb(138_92_255/0.6)]" />;
 }
 
 const SHORTCUTS: { title: string; subtitle: string; prompt: string; icon: typeof Dumbbell; wide?: boolean }[] = [
@@ -207,7 +202,7 @@ export default function CoachPage() {
 
         <section className={cx("relative overflow-hidden rounded-card p-5 sm:p-6", glass)}>
           <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full opacity-60 blur-3xl"
-            style={{ background: "radial-gradient(circle, #8fb8ff 0%, #c9a4ff 45%, transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle, #ffd23f 0%, #ff9a3d 30%, #8a5cff 55%, transparent 72%)" }} />
           <div className="relative">
             <div className="flex items-center gap-3">
               <Orb size={40} />
