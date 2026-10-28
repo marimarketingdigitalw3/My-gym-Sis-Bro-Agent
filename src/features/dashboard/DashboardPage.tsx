@@ -204,7 +204,7 @@ export default function DashboardPage() {
             ].map((b) => (
               <li key={b.label} className="flex w-16 flex-col items-center text-center sm:w-20">
                 <span className={cx("grid h-12 w-12 place-items-center rounded-full font-display text-lg font-semibold tabular-nums shadow-sm sm:h-14 sm:w-14",
-                  b.done ? "bg-primary-strong text-on-primary" : "bg-surface/80 text-text")}>{b.value}</span>
+                  b.done ? "bg-primary-strong text-on-primary" : "bg-surface/90 text-text ring-1 ring-border")}>{b.value}</span>
                 <span className="mt-1 text-[11px] font-medium text-muted">{b.label}</span>
               </li>
             ))}

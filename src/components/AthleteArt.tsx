@@ -6,7 +6,7 @@ export function AthleteArt({ variant, className }: { variant: "sis" | "bro"; cla
   const shoulderR = bro ? 108 : 100;
   return (
     <svg viewBox="0 0 160 210" className={className} aria-hidden focusable="false">
-      <circle cx="80" cy="110" r="74" fill="currentColor" opacity="0.12" />
+      <circle cx="80" cy="110" r="74" fill={bro ? "currentColor" : "rgb(var(--accent))"} opacity={bro ? 0.12 : 0.55} />
       {/* Mancuerna */}
       <g fill="currentColor">
         <rect x="30" y="14" width="100" height="5" rx="2.5" />

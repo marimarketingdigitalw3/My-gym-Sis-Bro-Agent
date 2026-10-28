@@ -44,38 +44,40 @@
   color-scheme: light;
 }
 
-/* My Gym/Sis: coral y rosa salmón, títulos serif con cursiva. */
+/* My Gym/Sis: rosados, blanco, salmón y amarillo mantequilla; titulares serif con cursiva. */
 [data-theme="sis"] {
-  --bg: 255 244 240;
+  --bg: 255 246 247;
   --surface: 255 255 255;
-  --surface-2: 253 236 231;
-  --border: 247 216 207;
-  --text: 58 36 32;
-  --muted: 135 99 90;
-  --primary: 240 150 128;
-  --primary-strong: 196 64 44;
+  --surface-2: 255 238 241;
+  --border: 250 218 225;
+  --text: 64 34 44;
+  --muted: 140 98 110;
+  --primary: 247 160 150;
+  --primary-strong: 201 58 98;
   --on-primary: 255 255 255;
-  --secondary: 252 214 204;
-  --accent: 255 228 218;
-  --headline: 214 74 52;
+  --secondary: 255 233 170;
+  --accent: 255 214 120;
+  --headline: 214 69 107;
   --success: 61 125 96;
   --warning: 160 110 20;
   --danger: 178 48 48;
-  --feature-bg: linear-gradient(150deg, #e3644a 0%, #ef8f74 100%);
+  --feature-bg: linear-gradient(150deg, #ef6f8e 0%, #f7927f 55%, #fbb57c 100%);
   --feature-fg: 255 255 255;
-  --feature-ring: 255 228 218;
-  --page-bg: radial-gradient(110% 55% at 10% 0%, #fde0d8 0%, rgba(253, 224, 216, 0) 60%),
-    radial-gradient(90% 50% at 100% 15%, #fbd3c9 0%, rgba(251, 211, 201, 0) 60%),
-    linear-gradient(180deg, #fff6f3 0%, #fff1ec 100%);
+  --feature-ring: 255 228 140;
+  --page-bg: radial-gradient(110% 55% at 0% 0%, #ffd9e3 0%, rgba(255, 217, 227, 0) 60%),
+    radial-gradient(80% 45% at 100% 8%, #fff0c2 0%, rgba(255, 240, 194, 0) 60%),
+    radial-gradient(90% 50% at 100% 70%, #ffdcd2 0%, rgba(255, 220, 210, 0) 60%),
+    linear-gradient(180deg, #fff8f8 0%, #fff4f2 100%);
   --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-body: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --display-weight: 600;
   --display-em-style: italic;
   --display-em-weight: 500;
   --radius-card: 1.75rem;
-  --shadow-card: 0 1px 2px rgb(58 36 32 / 0.03), 0 14px 32px -18px rgb(214 74 52 / 0.3);
-  --streak-bg: linear-gradient(150deg, #fde8e0 0%, #f9c8b9 100%);
-  --streak-art: 214 74 52;
+  --shadow-card: 0 1px 2px rgb(64 34 44 / 0.03), 0 14px 32px -18px rgb(214 69 107 / 0.3);
+  --streak-bg: radial-gradient(70% 80% at 100% 100%, #fff1bf 0%, rgba(255, 241, 191, 0) 70%),
+    linear-gradient(150deg, #ffe6ec 0%, #ffd6cc 100%);
+  --streak-art: 230 98 118;
   --hero: var(--feature-bg);
 }
 
