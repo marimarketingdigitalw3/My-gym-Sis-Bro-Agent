@@ -17,18 +17,18 @@ const password = z.string().min(8, "Usa al menos 8 caracteres.").max(72, "Máxim
 function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      <div className="hero-surface relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
+      <div className="hero-surface relative m-4 hidden overflow-hidden rounded-[2.25rem] shadow-card lg:flex lg:flex-col lg:justify-between lg:p-12">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">Entrena a tu manera</p>
         <HeroArt className="mx-auto w-full max-w-md" />
         <div>
-          <p className="font-display text-4xl font-semibold leading-tight">Fuerza, constancia y bienestar con un plan hecho para ti.</p>
+          <p className="font-display text-4xl font-semibold leading-tight">Fuerza, constancia y <em className="[font-style:var(--display-em-style)]">bienestar</em> con un plan hecho para ti.</p>
           <p className="mt-3 max-w-md text-white/80">Entrenamientos según tu equipo y tu nivel, nutrición flexible y un coach que conoce tu progreso.</p>
         </div>
       </div>
       <div className="flex flex-col justify-center px-5 py-10 sm:px-10">
-        <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto w-full max-w-md rounded-card border border-border/60 bg-surface/80 p-6 shadow-card backdrop-blur-xl sm:p-8">
           <BrandMark />
-          <h1 className="mt-8 text-3xl font-semibold">{title}</h1>
+          <h1 className="display-hero mt-8 text-4xl">{title}</h1>
           <p className="mt-2 text-muted">{subtitle}</p>
           {db.mode === "local" && <div className="mt-4"><DemoBadge /></div>}
           <div className="mt-6">{children}</div>

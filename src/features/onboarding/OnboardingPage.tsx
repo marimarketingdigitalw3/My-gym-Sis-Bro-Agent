@@ -308,7 +308,7 @@ export default function OnboardingPage() {
   const current = STEPS[step];
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-20 border-b border-border bg-bg/95 backdrop-blur">
+      <header className="sticky top-0 z-20 bg-bg/60 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
           <BrandMark compact />
           <span className="text-sm text-muted">Paso {step + 1} de {STEPS.length}</span>
@@ -317,7 +317,7 @@ export default function OnboardingPage() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 pb-32 pt-6">
-        <h1 className="text-2xl font-semibold sm:text-3xl">{current.title}</h1>
+        <h1 className="display-hero text-3xl sm:text-4xl">{current.title}</h1>
         <div key={current.key} className="mt-5 animate-fade-up space-y-5">
           {current.key === "basic" && <BasicStep a={a} set={set} errors={errors} />}
           {current.key === "goals" && <GoalsStep a={a} set={set} toggle={toggle} errors={errors} />}
@@ -333,8 +333,8 @@ export default function OnboardingPage() {
         </div>
       </main>
 
-      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
+      <footer className="fixed inset-x-0 bottom-0 z-20 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-[2rem] border border-border/60 bg-surface/90 p-2 shadow-[0_18px_40px_-16px_rgb(0_0_0/0.35)] backdrop-blur-xl">
           <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || saving}>
             <ArrowLeft className="h-4 w-4" /> Atrás
           </Button>

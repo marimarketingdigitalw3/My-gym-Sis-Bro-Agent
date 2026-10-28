@@ -25,7 +25,7 @@ export default function ExerciseDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Volver
       </button>
       <header>
-        <h1 className="text-3xl font-semibold">{ex.name}</h1>
+        <h1 className="display-hero text-3xl sm:text-4xl">{ex.name}</h1>
         <p className="text-muted">{ex.nameEn}</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           <Badge tone="primary">{CATEGORY_LABELS[ex.category]}</Badge>
@@ -59,7 +59,7 @@ export default function ExerciseDetailPage() {
         <ul className="grid gap-2 sm:grid-cols-2">
           {ex.alternatives.map((a) => EXERCISE_BY_ID[a]).filter(Boolean).map((alt) => (
             <li key={alt.id}>
-              <Link to={`/exercises/${alt.id}`} className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5 hover:border-primary-strong">
+              <Link to={`/exercises/${alt.id}`} className="flex items-center justify-between rounded-2xl border border-border/60 px-3 py-2.5 hover:border-primary-strong">
                 <span className="font-medium">{alt.name}</span>
                 {isAllowed(alt, ctx) ? <Badge tone="success">Compatible</Badge> : <Badge>Revisa equipo o zonas</Badge>}
               </Link>

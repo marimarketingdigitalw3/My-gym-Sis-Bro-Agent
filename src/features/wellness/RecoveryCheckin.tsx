@@ -43,9 +43,9 @@ export function RecoveryCheckin({ date, value, onSaved }: { date: string; value:
       <Card>
         <CardHeader title="Bienestar de hoy" icon={<HeartPulse className="h-5 w-5" />} action={<Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Editar</Button>} />
         <div className="grid grid-cols-3 gap-2 text-center text-sm">
-          <div className="rounded-xl bg-surface-2 p-2"><p className="text-muted">Energía</p><p className="font-semibold">{value.energy ?? "—"}/5</p></div>
-          <div className="rounded-xl bg-surface-2 p-2"><p className="text-muted">Sueño</p><p className="font-semibold">{value.sleep_hours ?? "—"} h</p></div>
-          <div className="rounded-xl bg-surface-2 p-2"><p className="text-muted">Agujetas</p><p className="font-semibold">{value.soreness ?? "—"}/5</p></div>
+          <div className="rounded-3xl bg-surface-2/70 p-2"><p className="text-muted">Energía</p><p className="font-semibold">{value.energy ?? "—"}/5</p></div>
+          <div className="rounded-3xl bg-surface-2/70 p-2"><p className="text-muted">Sueño</p><p className="font-semibold">{value.sleep_hours ?? "—"} h</p></div>
+          <div className="rounded-3xl bg-surface-2/70 p-2"><p className="text-muted">Agujetas</p><p className="font-semibold">{value.soreness ?? "—"}/5</p></div>
         </div>
         {value.red_flags.length > 0 && <div className="mt-3"><Notice tone="danger">{safetyMessage(value.red_flags)}</Notice></div>}
       </Card>
@@ -72,7 +72,7 @@ export function RecoveryCheckin({ date, value, onSaved }: { date: string; value:
           <p className="mb-1.5 font-medium">¿Dolor en alguna zona?</p>
           <div className="flex flex-wrap gap-1.5">{(Object.keys(JOINT_LABELS) as JointArea[]).map((j) => <Chip key={j} selected={pain.includes(j)} onClick={() => setPain(toggle(pain, j))}>{JOINT_LABELS[j]}</Chip>)}</div>
         </div>
-        <details className="rounded-xl bg-surface-2 p-3">
+        <details className="rounded-3xl bg-surface-2/70 p-3">
           <summary className="cursor-pointer font-medium">Síntomas de alarma</summary>
           <div className="mt-2 space-y-1.5">
             {RED_FLAGS.map((f) => (

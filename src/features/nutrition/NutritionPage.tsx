@@ -334,7 +334,7 @@ function PlanTab({ days, prefs, targets, caloriesVisible, onChange, onRegenerate
             if (!r) return null;
             const mm = mealMacros(m);
             return (
-              <li key={`${m.mealType}-${i}`} className="rounded-2xl border border-border p-3.5">
+              <li key={`${m.mealType}-${i}`} className="rounded-3xl border border-border/60 bg-surface-2/40 p-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <button type="button" className="min-w-0 text-left" onClick={() => setRecipe({ r, servings: m.servings })}>
                     <p className="text-xs font-semibold uppercase text-muted">{MEAL_LABELS[m.mealType]}</p>
@@ -380,7 +380,7 @@ function PlanTab({ days, prefs, targets, caloriesVisible, onChange, onRegenerate
               <ol className="mt-1 list-decimal space-y-1 pl-5">{recipe.r.steps.map((s) => <li key={s}>{s}</li>)}</ol>
             </div>
             {caloriesVisible && (
-              <p className="rounded-xl bg-surface-2 p-3">
+              <p className="rounded-3xl bg-surface-2/70 p-3">
                 Por esta cantidad (estimado): {Math.round(recipe.r.kcal * recipe.servings)} kcal · P {Math.round(recipe.r.proteinG * recipe.servings)} g · C {Math.round(recipe.r.carbsG * recipe.servings)} g · G {Math.round(recipe.r.fatG * recipe.servings)} g
               </p>
             )}

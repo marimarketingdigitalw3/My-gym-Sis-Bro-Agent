@@ -2,73 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tokens de diseño por tema. Los colores son tripletas RGB para admitir opacidad en Tailwind. */
+/*
+ * Tokens de diseño por tema. Los colores son tripletas RGB para admitir opacidad en Tailwind.
+ * Lenguaje común: fondo con degradado suave, tarjetas blancas muy redondeadas, botones en píldora,
+ * tarjeta destacada de progreso y barra de navegación flotante.
+ */
 :root,
 [data-theme="neutral"] {
-  --bg: 246 247 246;
+  /* Neutro: lavanda y melocotón, botones negros y acento lima. */
+  --bg: 244 240 243;
   --surface: 255 255 255;
-  --surface-2: 238 241 239;
-  --border: 221 227 223;
-  --text: 31 42 39;
-  --muted: 94 107 103;
-  --primary: 79 154 143;
-  --primary-strong: 47 111 102;
+  --surface-2: 243 240 244;
+  --border: 233 228 236;
+  --text: 24 24 27;
+  --muted: 108 102 112;
+  --primary: 24 24 27;
+  --primary-strong: 24 24 27;
   --on-primary: 255 255 255;
-  --secondary: 214 231 227;
-  --accent: 197 139 78;
+  --secondary: 236 228 240;
+  --accent: 211 228 150;
+  --headline: 24 24 27;
   --success: 46 125 90;
   --warning: 166 112 20;
   --danger: 185 56 56;
-  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --radius-card: 1.25rem;
-  --shadow-card: 0 1px 2px rgb(16 24 20 / 0.04), 0 8px 24px -12px rgb(16 24 20 / 0.12);
-  --hero: linear-gradient(135deg, #2f6f66 0%, #4f9a8f 60%, #c58b4e 140%);
+  --feature-bg: linear-gradient(150deg, #2c2c30 0%, #1b1b1e 100%);
+  --feature-fg: 255 255 255;
+  --feature-ring: 211 228 150;
+  --page-bg: radial-gradient(120% 60% at 15% 0%, #f4d8ea 0%, rgba(244, 216, 234, 0) 60%),
+    radial-gradient(90% 55% at 100% 10%, #f8e2d4 0%, rgba(248, 226, 212, 0) 60%),
+    linear-gradient(180deg, #f3eef2 0%, #f1eff3 100%);
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display-weight: 500;
+  --display-em-style: normal;
+  --display-em-weight: 700;
+  --radius-card: 1.75rem;
+  --shadow-card: 0 1px 2px rgb(24 24 27 / 0.03), 0 12px 32px -18px rgb(60 40 80 / 0.22);
+  --streak-bg: linear-gradient(140deg, #f7dceb 0%, #f9e7da 100%);
+  --streak-art: 24 24 27;
+  --hero: var(--feature-bg);
   color-scheme: light;
 }
 
-/* My Gym/Sis: elegante y atlético. Rosa empolvado, beige, crema y dorado suave. */
+/* My Gym/Sis: coral y rosa salmón, títulos serif con cursiva. */
 [data-theme="sis"] {
-  --bg: 255 248 246;
+  --bg: 255 244 240;
   --surface: 255 255 255;
-  --surface-2: 251 239 236;
-  --border: 238 217 214;
-  --text: 51 39 45;
-  --muted: 118 98 107;
-  --primary: 217 141 164;
-  --primary-strong: 160 74 102;
+  --surface-2: 253 236 231;
+  --border: 247 216 207;
+  --text: 58 36 32;
+  --muted: 135 99 90;
+  --primary: 240 150 128;
+  --primary-strong: 196 64 44;
   --on-primary: 255 255 255;
-  --secondary: 235 196 207;
-  --accent: 197 164 109;
+  --secondary: 252 214 204;
+  --accent: 255 228 218;
+  --headline: 214 74 52;
   --success: 61 125 96;
   --warning: 160 110 20;
-  --danger: 178 58 72;
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
-  --radius-card: 1.5rem;
-  --shadow-card: 0 1px 2px rgb(51 39 45 / 0.04), 0 12px 28px -16px rgb(169 81 109 / 0.28);
-  --hero: linear-gradient(140deg, #33272d 0%, #a04a66 55%, #d98da4 85%, #c5a46d 120%);
+  --danger: 178 48 48;
+  --feature-bg: linear-gradient(150deg, #e3644a 0%, #ef8f74 100%);
+  --feature-fg: 255 255 255;
+  --feature-ring: 255 228 218;
+  --page-bg: radial-gradient(110% 55% at 10% 0%, #fde0d8 0%, rgba(253, 224, 216, 0) 60%),
+    radial-gradient(90% 50% at 100% 15%, #fbd3c9 0%, rgba(251, 211, 201, 0) 60%),
+    linear-gradient(180deg, #fff6f3 0%, #fff1ec 100%);
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-body: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display-weight: 600;
+  --display-em-style: italic;
+  --display-em-weight: 500;
+  --radius-card: 1.75rem;
+  --shadow-card: 0 1px 2px rgb(58 36 32 / 0.03), 0 14px 32px -18px rgb(214 74 52 / 0.3);
+  --streak-bg: linear-gradient(150deg, #fde8e0 0%, #f9c8b9 100%);
+  --streak-art: 214 74 52;
+  --hero: var(--feature-bg);
 }
 
-/* Gym Bro: potente y orientado al rendimiento. Negro, grafito y acentos metálicos. */
+/* Gym Bro: tonos oscuros, grafito y acentos metálicos. */
 [data-theme="bro"] {
-  --bg: 16 17 20;
-  --surface: 32 33 38;
-  --surface-2: 42 43 49;
-  --border: 56 58 66;
+  --bg: 14 15 18;
+  --surface: 30 31 36;
+  --surface-2: 40 41 47;
+  --border: 52 54 61;
   --text: 245 245 245;
-  --muted: 166 173 183;
+  --muted: 160 166 176;
   --primary: 166 173 183;
-  --primary-strong: 232 234 237;
-  --on-primary: 16 17 20;
+  --primary-strong: 240 241 243;
+  --on-primary: 14 15 18;
   --secondary: 41 41 41;
-  --accent: 166 173 183;
+  --accent: 201 206 214;
+  --headline: 245 245 245;
   --success: 92 200 150;
   --warning: 230 182 90;
   --danger: 240 110 110;
+  --feature-bg: linear-gradient(150deg, #3a3d45 0%, #1f2025 100%);
+  --feature-fg: 245 245 245;
+  --feature-ring: 211 228 150;
+  --page-bg: radial-gradient(110% 55% at 10% 0%, #2a2c33 0%, rgba(42, 44, 51, 0) 60%),
+    radial-gradient(90% 50% at 100% 10%, #24262c 0%, rgba(36, 38, 44, 0) 60%),
+    linear-gradient(180deg, #121317 0%, #0d0e11 100%);
   --font-display: "Oswald", "Arial Narrow", Impact, sans-serif;
-  --radius-card: 0.9rem;
-  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 16px 32px -20px rgb(0 0 0 / 0.8);
-  --hero: linear-gradient(135deg, #0b0c0e 0%, #23252b 55%, #4a4f57 100%);
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --display-weight: 500;
+  --display-em-style: normal;
+  --display-em-weight: 600;
+  --radius-card: 1.75rem;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 18px 36px -22px rgb(0 0 0 / 0.9);
+  --streak-bg: linear-gradient(150deg, #2c2e35 0%, #17181c 100%);
+  --streak-art: 211 228 150;
+  --hero: var(--feature-bg);
   color-scheme: dark;
 }
 
@@ -78,6 +121,8 @@
   }
   body {
     @apply bg-bg text-text font-body antialiased;
+    background: var(--page-bg);
+    background-attachment: fixed;
     min-height: 100dvh;
   }
   h1, h2, h3 {
@@ -99,9 +144,30 @@
 }
 
 @layer components {
-  .hero-surface {
-    background: var(--hero);
-    color: #fff;
+  .hero-surface,
+  .feature-card {
+    background: var(--feature-bg);
+    color: rgb(var(--feature-fg));
+  }
+  .streak-card {
+    background: var(--streak-bg);
+  }
+  /* Titular grande: ligero con una palabra destacada (cursiva serif en Sis, negrita en el resto). */
+  .display-hero {
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    color: rgb(var(--headline));
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+  .display-hero em {
+    font-style: var(--display-em-style);
+    font-weight: var(--display-em-weight);
+  }
+  [data-theme="bro"] .display-hero {
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
   }
   .skeleton {
     @apply relative overflow-hidden rounded-xl bg-surface-2;

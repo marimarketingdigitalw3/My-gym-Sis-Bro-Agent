@@ -1,10 +1,11 @@
-import { Bot, CalendarHeart, ChevronRight, Dumbbell, Flame, Play, Snowflake, Target, Trophy, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, Bot, CalendarDays, CalendarHeart, Check, CheckCircle2, ChevronRight, Dumbbell, Flame, Snowflake, Target, Trophy, UtensilsCrossed } from "lucide-react";
+import { AthleteArt } from "@/components/AthleteArt";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useBundle } from "@/app/providers";
 import { TrendChart } from "@/components/charts";
 import {
-  Badge, Button, Card, CardHeader, EmptyState, ErrorState, Notice, PageSkeleton, ProgressBar, ProgressRing, Stat, cx,
+  Badge, Card, CardHeader, EmptyState, ErrorState, Notice, PageSkeleton, ProgressBar, ProgressRing, Stat, cx,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { trainingClearance } from "@/lib/clearance";
@@ -86,40 +87,34 @@ export default function DashboardPage() {
   }
 
   const firstName = bundle.profile.display_name.split(" ")[0];
+  const theme = bundle.profile.theme;
   return (
     <div className="space-y-5">
-      {/* Saludo y entrenamiento de hoy */}
-      <section className="hero-surface overflow-hidden rounded-card p-5 shadow-card sm:p-7">
-        <p className="text-sm first-letter:uppercase text-white/80">{formatLongDate(today)}</p>
-        <h1 className="mt-1 text-3xl font-semibold sm:text-4xl">Hola, {firstName}</h1>
-        <p className="mt-1 text-white/85">Objetivo: {GOAL_LABELS[goal]}</p>
-
-        <div className="mt-5 rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
-          {clearance.status === "blocked" ? (
-            <p className="font-medium">Pausamos las recomendaciones de entrenamiento: {clearance.reasons[0]} Busca evaluación médica.</p>
-          ) : todayDay ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Entrenamiento de hoy</p>
-                <p className="text-xl font-semibold">{todayDay.title}</p>
-                <p className="text-sm text-white/80">{todaysExercises.length} ejercicios · ~{todayDay.estimatedMinutes} min · {todayDay.focus}</p>
-              </div>
-              {doneToday
-                ? <Badge tone="success" className="bg-white/90">Completado hoy</Badge>
-                : <Button variant="inverse" onClick={() => start(todayDay.dayIndex, todayDay.title)} loading={starting}><Play className="h-4 w-4" /> Empezar</Button>}
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Hoy</p>
-                <p className="text-xl font-semibold">Día de descanso</p>
-                <p className="text-sm text-white/80">Camina, estira o descansa. {nextDay ? `Próximo: ${nextDay.title} (${WEEKDAYS_SHORT[nextDay.weekday]}).` : ""}</p>
-              </div>
-              {nextDay && <Button variant="inverse-outline" onClick={() => start(nextDay.dayIndex, nextDay.title)} loading={starting}>Entrenar igual</Button>}
-            </div>
-          )}
+      {/* Saludo y resumen del día */}
+      <section className="flex items-start justify-between gap-3 pt-1">
+        <div className="min-w-0">
+          <p className="text-sm text-muted first-letter:uppercase">{formatLongDate(today)}</p>
+          <h1 className="display-hero mt-2 text-[2.35rem] sm:text-5xl">
+            Hola, <em>{firstName}</em>
+            <span className="block">{theme === "sis" ? <>Hoy toca <em>brillar</em></> : theme === "bro" ? "A darle con todo" : "Tu resumen de hoy"}</span>
+          </h1>
         </div>
+        <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-surface px-3 py-1.5 text-sm font-semibold shadow-sm" title="Racha actual">
+          <Flame className="h-4 w-4 text-headline" aria-hidden /> {streak.streak} <span className="text-xs font-medium text-muted">días</span>
+        </span>
       </section>
+
+      <div className="flex items-center gap-4">
+        <p className="flex items-baseline gap-3 tabular-nums">
+          <span className="text-5xl font-semibold leading-none">{String(completedThisWeek).padStart(2, "0")}</span>
+          <span className="h-10 w-px self-center bg-border" aria-hidden />
+          <span className="text-5xl font-light leading-none text-muted">{String(active?.plan.days_per_week ?? 0).padStart(2, "0")}</span>
+        </p>
+        <p className="text-sm leading-tight text-muted">Sesiones<br />esta semana</p>
+        <Link to="/workouts" aria-label="Ver plan semanal" className="ml-auto grid h-12 w-12 place-items-center rounded-full border border-border/60 bg-surface shadow-sm">
+          <CalendarDays className="h-5 w-5" />
+        </Link>
+      </div>
 
       {clearance.status !== "ok" && (
         <Notice tone={clearance.status === "blocked" ? "danger" : "warning"} title={clearance.status === "blocked" ? "Entrenamiento en pausa" : "Tu plan tiene ajustes de seguridad"}>
@@ -127,39 +122,126 @@ export default function DashboardPage() {
         </Notice>
       )}
 
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Sesión de hoy */}
+        <section className="relative overflow-hidden rounded-card border border-border/60 bg-surface shadow-card">
+          <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full opacity-80 blur-2xl"
+            style={{ background: "radial-gradient(circle at 30% 30%, rgb(var(--primary) / .9), rgb(var(--accent) / .9) 55%, transparent 72%)" }} />
+          <div className="relative p-5 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">{todayDay ? "Entrenamiento de hoy" : "Hoy"}</p>
+            <h2 className="mt-1 text-2xl font-semibold">{clearance.status === "blocked" ? "Entrenamiento en pausa" : todayDay ? todayDay.title : "Día de descanso"}</h2>
+            <p className="text-sm text-muted">{todayDay ? todayDay.focus : "Camina, estira o descansa."}</p>
+            <div className="mt-5 flex gap-6 text-sm">
+              <div>
+                <p className="text-muted">{todayDay ? "Ejercicios" : "Próxima sesión"}</p>
+                <p className="mt-0.5 font-semibold">{todayDay ? todaysExercises.length : nextDay ? `${WEEKDAYS_SHORT[nextDay.weekday]} · ${nextDay.title}` : "—"}</p>
+              </div>
+              {todayDay && <span className="w-px bg-border" aria-hidden />}
+              {todayDay && (
+                <div>
+                  <p className="text-muted">Duración</p>
+                  <p className="mt-0.5 font-semibold">~{todayDay.estimatedMinutes} min</p>
+                </div>
+              )}
+            </div>
+          </div>
+          {clearance.status !== "blocked" && (todayDay || nextDay) && (
+            doneToday && todayDay ? (
+              <p className="relative flex items-center gap-2 border-t border-border/60 bg-surface-2/60 px-5 py-4 text-sm font-semibold text-success sm:px-6">
+                <CheckCircle2 className="h-5 w-5" /> Sesión de hoy completada
+              </p>
+            ) : (
+              <button type="button" disabled={starting}
+                onClick={() => (todayDay ? start(todayDay.dayIndex, todayDay.title) : nextDay && start(nextDay.dayIndex, nextDay.title))}
+                className="relative flex w-full items-center justify-between border-t border-border/60 bg-surface-2/60 px-5 py-4 text-left font-semibold transition hover:bg-surface-2 disabled:opacity-60 sm:px-6">
+                {starting ? "Abriendo…" : todayDay ? "Empezar la sesión de hoy" : "Entrenar igual hoy"}
+                <ArrowRight className="h-5 w-5" aria-hidden />
+              </button>
+            )
+          )}
+        </section>
+
+        {/* Progreso semanal: tarjeta destacada */}
+        <section className="feature-card rounded-card p-5 shadow-card sm:p-6" aria-label="Progreso de la semana">
+          <p className="text-lg font-semibold">Progreso de la semana</p>
+          <div className="mt-4 flex items-center gap-5">
+            <ProgressRing value={weeklyCompletion(completedThisWeek, active?.plan.days_per_week ?? 0)} size={128} stroke={14}
+              color="var(--feature-ring)" track="var(--feature-fg) / .12" label="Cumplimiento semanal">
+              <span className="text-2xl font-semibold">{weeklyCompletion(completedThisWeek, active?.plan.days_per_week ?? 0)}<span className="text-sm">%</span></span>
+            </ProgressRing>
+            <span className="h-24 w-px bg-feature-fg/15" aria-hidden />
+            <ul className="space-y-3 text-sm">
+              {[
+                { icon: CalendarDays, value: active?.plan.days_per_week ?? 0, label: "Planificadas" },
+                { icon: CheckCircle2, value: completedThisWeek, label: "Completadas" },
+                { icon: Snowflake, value: streak.freezes, label: "Comodines" },
+              ].map(({ icon: Icon, value, label }) => (
+                <li key={label} className="flex items-center gap-2.5">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-feature-fg/10"><Icon className="h-4 w-4" aria-hidden /></span>
+                  <span className="leading-tight"><span className="block font-semibold tabular-nums">{value}</span><span className="text-xs opacity-70">{label}</span></span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      {/* Racha y logros: titular en cursiva con ilustración según el tema */}
+      <section className="streak-card relative overflow-hidden rounded-card border border-border/60 p-5 shadow-card sm:p-7" aria-label="Racha">
+        <div className="relative z-10 max-w-[58%] sm:max-w-[62%]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-1 text-xs font-semibold text-text backdrop-blur">
+            <Flame className="h-3.5 w-3.5 text-headline" aria-hidden /> Racha activa
+          </span>
+          <p className="display-hero mt-3 text-3xl sm:text-4xl">
+            {streak.streak > 0 ? <>Llevas una racha de <em>{streak.streak} {streak.streak === 1 ? "día" : "días"}</em></> : <>Hoy empieza <em>tu racha</em></>}
+          </p>
+          <p className="mt-2 text-sm text-muted">Día {streak.challengeDay} de {CHALLENGE_DAYS} del reto. Cada entrenamiento suma.</p>
+          <ul className="mt-5 flex gap-3" aria-label="Logros">
+            {[
+              { label: "Sesiones", value: completed.length, done: completed.length > 0 },
+              { label: "Mejor racha", value: streak.best, done: streak.best >= 7 },
+              { label: "Reto 66", value: `${streak.challengeDay}`, done: streak.challengeDay >= CHALLENGE_DAYS },
+            ].map((b) => (
+              <li key={b.label} className="flex w-16 flex-col items-center text-center sm:w-20">
+                <span className={cx("grid h-12 w-12 place-items-center rounded-full font-display text-lg font-semibold tabular-nums shadow-sm sm:h-14 sm:w-14",
+                  b.done ? "bg-primary-strong text-on-primary" : "bg-surface/80 text-text")}>{b.value}</span>
+                <span className="mt-1 text-[11px] font-medium text-muted">{b.label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {theme === "neutral" ? (
+          <Flame className="absolute -bottom-4 -right-4 h-44 w-44 text-[rgb(var(--streak-art)/0.12)] sm:h-56 sm:w-56" aria-hidden />
+        ) : (
+          <AthleteArt variant={theme} className="absolute -bottom-2 -right-3 h-[74%] max-w-[46%] w-auto opacity-90 text-[rgb(var(--streak-art))] sm:right-4" />
+        )}
+      </section>
+
+      {/* Semana en píldoras */}
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* Semana */}
         <Card className="lg:col-span-2">
-          <CardHeader title="Tu semana" subtitle={`${completedThisWeek} de ${active?.plan.days_per_week ?? 0} sesiones completadas`} icon={<Dumbbell className="h-5 w-5" />}
+          <CardHeader title="Tu semana" subtitle={`${completedThisWeek} de ${active?.plan.days_per_week ?? 0} sesiones completadas`}
             action={<Link to="/workouts" className="text-sm font-semibold text-primary-strong">Ver plan</Link>} />
           <ol className="grid grid-cols-7 gap-1.5">
             {WEEKDAYS_SHORT.map((label, i) => {
               const date = addDays(weekStart, i);
               const planned = active?.plan.schedule.some((d) => d.weekday === i);
               const done = completedDates.has(date);
+              const isToday = date === today;
               return (
-                <li key={label} className={cx("flex flex-col items-center gap-1 rounded-xl py-2 text-xs",
-                  date === today ? "bg-primary/15 font-semibold text-primary-strong" : "text-muted")}>
+                <li key={label} className={cx("flex flex-col items-center gap-1.5 rounded-full border py-2.5 text-xs font-medium",
+                  isToday ? "border-primary-strong/30 bg-surface shadow-sm" : "border-border/60 bg-surface-2/50 text-muted")}>
                   {label}
                   <span aria-label={done ? "completado" : planned ? "planificado" : "descanso"}
-                    className={cx("grid h-8 w-8 place-items-center rounded-full border text-[11px]",
-                      done ? "border-primary-strong bg-primary-strong text-on-primary" : planned ? "border-primary-strong/60" : "border-dashed border-border")}>
-                    {done ? "✓" : planned ? "•" : ""}
+                    className={cx("grid h-8 w-8 place-items-center rounded-full text-[12px] font-semibold tabular-nums",
+                      done ? "bg-primary-strong text-on-primary" : isToday ? "bg-primary-strong/10 text-text" : planned ? "bg-surface text-text" : "text-muted")}>
+                    {done ? <Check className="h-4 w-4" /> : Number(date.slice(8, 10))}
                   </span>
+                  <span className={cx("h-1 w-1 rounded-full", planned ? "bg-headline" : "bg-transparent")} aria-hidden />
                 </li>
               );
             })}
           </ol>
-          <div className="mt-4 flex items-center gap-4">
-            <ProgressRing value={weeklyCompletion(completedThisWeek, active?.plan.days_per_week ?? 0)} label="Cumplimiento semanal">
-              {weeklyCompletion(completedThisWeek, active?.plan.days_per_week ?? 0)}%
-            </ProgressRing>
-            <div className="grid flex-1 grid-cols-3 gap-2">
-              <Stat label="Racha" value={<span className="inline-flex items-center gap-1"><Flame className="h-4 w-4 text-primary-strong" />{streak.streak}</span>} hint="días" />
-              <Stat label="Comodines" value={<span className="inline-flex items-center gap-1"><Snowflake className="h-4 w-4 text-primary-strong" />{streak.freezes}</span>} hint="disponibles" />
-              <Stat label="Reto" value={`${streak.challengeDay}/${CHALLENGE_DAYS}`} hint="días" />
-            </div>
-          </div>
         </Card>
 
         <RecoveryCheckin date={today} value={recovery} onSaved={(r) => setData((d) => (d ? { ...d, recovery: r } : d))} />

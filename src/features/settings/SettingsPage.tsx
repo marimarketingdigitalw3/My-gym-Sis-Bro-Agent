@@ -53,7 +53,7 @@ function QuickLinks() {
     <Card className="p-2 md:hidden">
       <ul>
         {links.map(({ to, label, icon: Icon }) => (
-          <li key={to}><Link to={to} className="flex items-center gap-3 rounded-xl px-3 py-3 font-medium hover:bg-surface-2"><Icon className="h-5 w-5 text-primary-strong" /> {label}<ChevronRight className="ml-auto h-4 w-4 text-muted" /></Link></li>
+          <li key={to}><Link to={to} className="flex items-center gap-3 rounded-full px-4 py-3 font-medium hover:bg-surface-2"><Icon className="h-5 w-5 text-primary-strong" /> {label}<ChevronRight className="ml-auto h-4 w-4 text-muted" /></Link></li>
         ))}
       </ul>
     </Card>

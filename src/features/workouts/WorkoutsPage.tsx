@@ -119,7 +119,7 @@ function PlanView() {
             <Button onClick={start} loading={busy} disabled={clearance.status === "blocked" || exercises.length === 0}><Play className="h-4 w-4" /> Empezar sesión</Button>
           </div>
 
-          <div className="mt-4 rounded-2xl bg-surface-2 p-3.5 text-sm">
+          <div className="mt-4 rounded-3xl bg-surface-2/70 p-3.5 text-sm">
             <p className="font-semibold">Calentamiento</p>
             <ul className="mt-1 list-disc pl-5 text-muted">{meta.warmup.map((w) => <li key={w}>{w}</li>)}</ul>
           </div>
@@ -128,7 +128,7 @@ function PlanView() {
             {exercises.map((e, i) => {
               const ex = EXERCISE_BY_ID[e.exercise_id];
               return (
-                <li key={e.id} className="rounded-2xl border border-border p-3.5">
+                <li key={e.id} className="rounded-3xl border border-border/60 bg-surface-2/40 p-3.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-muted">{i + 1}</p>
@@ -156,7 +156,7 @@ function PlanView() {
           </ol>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Añadir ejercicio</Button>
 
-          <div className="mt-4 rounded-2xl bg-surface-2 p-3.5 text-sm">
+          <div className="mt-4 rounded-3xl bg-surface-2/70 p-3.5 text-sm">
             <p className="font-semibold">Vuelta a la calma</p>
             <ul className="mt-1 list-disc pl-5 text-muted">{meta.cooldown.map((w) => <li key={w}>{w}</li>)}</ul>
           </div>
