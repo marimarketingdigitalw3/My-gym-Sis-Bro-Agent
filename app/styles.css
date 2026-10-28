@@ -1,0 +1,146 @@
+:root {
+  --bg: #fbf7f9;
+  --card: #ffffff;
+  --text: #241a20;
+  --muted: #7a6a73;
+  --line: #ecdfe6;
+  --accent: #c2185b;
+  --accent-soft: #fce4ec;
+  --menstrual: #e57373;
+  --follicular: #81c784;
+  --ovulatory: #ffb74d;
+  --luteal: #9575cd;
+  --radius: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141013;
+    --card: #1f191d;
+    --text: #f4ecf0;
+    --muted: #a8979f;
+    --line: #33292f;
+    --accent: #f06292;
+    --accent-soft: #3a1f2b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+#app { max-width: 520px; margin: 0 auto; padding: 16px 16px 96px; }
+
+h1 { font-size: 2.2rem; margin: 24px 0 4px; color: var(--accent); }
+h2 { font-size: 1.35rem; margin: 6px 0 10px; }
+h3 { font-size: 1rem; margin: 22px 0 10px; }
+.card > h3:first-child { margin-top: 0; }
+p { margin: 8px 0; }
+
+.lead { color: var(--muted); margin-bottom: 20px; }
+.muted { color: var(--muted); font-size: .9rem; }
+.fine { color: var(--muted); font-size: .78rem; }
+.tip { background: var(--accent-soft); padding: 10px 12px; border-radius: 12px; font-size: .9rem; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: 600; }
+
+/* Formularios */
+.form label, .inline label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); margin-bottom: 12px; flex: 1; }
+.row { display: flex; gap: 10px; }
+.inline { display: flex; gap: 10px; align-items: flex-end; margin-top: 12px; }
+.inline label { margin: 0; }
+input, select, textarea {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px; width: 100%; min-width: 0;
+}
+textarea { resize: none; margin-bottom: 10px; }
+
+button { font: inherit; cursor: pointer; border: 0; }
+.primary { background: var(--accent); color: #fff; padding: 12px 16px; border-radius: 12px; font-weight: 600; width: 100%; }
+.inline .primary { width: auto; }
+.ghost { background: transparent; color: var(--muted); padding: 6px 10px; }
+.danger { color: var(--menstrual); width: 100%; margin-top: 10px; }
+
+/* Fase */
+.phase { border-left: 6px solid var(--accent); }
+.phase-menstrual.phase { border-left-color: var(--menstrual); }
+.phase-follicular.phase { border-left-color: var(--follicular); }
+.phase-ovulatory.phase { border-left-color: var(--ovulatory); }
+.phase-luteal.phase { border-left-color: var(--luteal); }
+.phase-top { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { background: var(--accent-soft); color: var(--accent); font-size: .78rem; font-weight: 600; padding: 4px 10px; border-radius: 99px; }
+.badge.light { background: var(--bg); color: var(--muted); }
+
+.bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 6px 0; }
+.bar span { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; }
+
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.mini { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; text-align: center; }
+.mini b { display: block; font-size: 1.15rem; }
+.mini span { color: var(--muted); font-size: .78rem; }
+
+/* Misiones */
+.quests { list-style: none; padding: 0; margin: 0; }
+.quests li { background: var(--card); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 8px; transition: opacity .2s; }
+.quests li.done { opacity: .6; }
+.quests li.done .q-body { text-decoration: line-through; }
+.quests label { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+.quests input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+.q-body { flex: 1; }
+.q-body small { display: block; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.xp { color: var(--accent); font-weight: 700; font-size: .85rem; }
+
+/* Comida */
+.macro { margin: 10px 0; }
+.macro-head { display: flex; justify-content: space-between; font-size: .85rem; }
+.list { list-style: none; padding: 0; margin: 0; }
+.list li { display: flex; justify-content: space-between; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; }
+.list small { display: block; color: var(--muted); font-size: .78rem; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.chip { background: var(--card); border: 1px solid var(--line); color: var(--text); padding: 8px 12px; border-radius: 99px; font-size: .85rem; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip.big { font-size: 1.4rem; padding: 6px 12px; }
+
+/* Ciclo */
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cell { aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px; font-size: .8rem; font-weight: 600; color: #fff; }
+.cell.now { outline: 3px solid var(--text); outline-offset: 1px; }
+.cell.phase-menstrual, .dot.phase-menstrual { background: var(--menstrual); }
+.cell.phase-follicular, .dot.phase-follicular { background: var(--follicular); }
+.cell.phase-ovulatory, .dot.phase-ovulatory { background: var(--ovulatory); }
+.cell.phase-luteal, .dot.phase-luteal { background: var(--luteal); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: .8rem; color: var(--muted); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+.facts { list-style: none; padding: 0; margin: 0; }
+.facts li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.facts li:last-child { border: 0; }
+.facts span { color: var(--muted); }
+
+/* Navegación */
+.tabs {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: center;
+  background: var(--card); border-top: 1px solid var(--line);
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+}
+.tabs button { flex: 1; max-width: 130px; background: none; color: var(--muted); padding: 10px 4px; border-radius: 10px; font-size: .88rem; font-weight: 600; }
+.tabs button.on { color: var(--accent); background: var(--accent-soft); }
+
+@media (max-width: 380px) {
+  .row { flex-wrap: wrap; }
+  .row label { flex: 1 1 40%; }
+}
