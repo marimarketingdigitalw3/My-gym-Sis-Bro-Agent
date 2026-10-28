@@ -1,0 +1,49 @@
+name: Supabase
+
+# Aplica migraciones, carga los secretos del coach y despliega las Edge Functions.
+# Requiere estos secretos del repositorio (Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN  token personal de https://supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_REF   referencia del proyecto (la parte <ref> de https://<ref>.supabase.co)
+#   SUPABASE_DB_PASSWORD   contraseña de la base de datos del proyecto
+#   ANTHROPIC_API_KEY      opcional: clave del proveedor de IA para Gym AI Coach
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comprobar secretos
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$PROJECT_REF" ] || [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "::error::Faltan SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF o SUPABASE_DB_PASSWORD en los secretos del repositorio."
+            exit 1
+          fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Aplicar migraciones
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+      - name: Secretos del coach
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            supabase secrets set --project-ref "$PROJECT_REF" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
+          else
+            echo "::warning::Sin ANTHROPIC_API_KEY: el coach funcionará en modo de respaldo."
+          fi
+      - name: Desplegar Edge Functions
+        run: |
+          supabase functions deploy coach-chat --project-ref "$PROJECT_REF"
+          supabase functions deploy delete-account --project-ref "$PROJECT_REF"

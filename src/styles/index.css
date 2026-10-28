@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens de diseño por tema. Los colores son tripletas RGB para admitir opacidad en Tailwind. */
+:root,
+[data-theme="neutral"] {
+  --bg: 246 247 246;
+  --surface: 255 255 255;
+  --surface-2: 238 241 239;
+  --border: 221 227 223;
+  --text: 31 42 39;
+  --muted: 94 107 103;
+  --primary: 79 154 143;
+  --primary-strong: 47 111 102;
+  --on-primary: 255 255 255;
+  --secondary: 214 231 227;
+  --accent: 197 139 78;
+  --success: 46 125 90;
+  --warning: 166 112 20;
+  --danger: 185 56 56;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(16 24 20 / 0.04), 0 8px 24px -12px rgb(16 24 20 / 0.12);
+  --hero: linear-gradient(135deg, #2f6f66 0%, #4f9a8f 60%, #c58b4e 140%);
+  color-scheme: light;
+}
+
+/* My Gym/Sis: elegante y atlético. Rosa empolvado, beige, crema y dorado suave. */
+[data-theme="sis"] {
+  --bg: 255 248 246;
+  --surface: 255 255 255;
+  --surface-2: 251 239 236;
+  --border: 238 217 214;
+  --text: 51 39 45;
+  --muted: 118 98 107;
+  --primary: 217 141 164;
+  --primary-strong: 160 74 102;
+  --on-primary: 255 255 255;
+  --secondary: 235 196 207;
+  --accent: 197 164 109;
+  --success: 61 125 96;
+  --warning: 160 110 20;
+  --danger: 178 58 72;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --radius-card: 1.5rem;
+  --shadow-card: 0 1px 2px rgb(51 39 45 / 0.04), 0 12px 28px -16px rgb(169 81 109 / 0.28);
+  --hero: linear-gradient(140deg, #33272d 0%, #a04a66 55%, #d98da4 85%, #c5a46d 120%);
+}
+
+/* Gym Bro: potente y orientado al rendimiento. Negro, grafito y acentos metálicos. */
+[data-theme="bro"] {
+  --bg: 16 17 20;
+  --surface: 32 33 38;
+  --surface-2: 42 43 49;
+  --border: 56 58 66;
+  --text: 245 245 245;
+  --muted: 166 173 183;
+  --primary: 166 173 183;
+  --primary-strong: 232 234 237;
+  --on-primary: 16 17 20;
+  --secondary: 41 41 41;
+  --accent: 166 173 183;
+  --success: 92 200 150;
+  --warning: 230 182 90;
+  --danger: 240 110 110;
+  --font-display: "Oswald", "Arial Narrow", Impact, sans-serif;
+  --radius-card: 0.9rem;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 16px 32px -20px rgb(0 0 0 / 0.8);
+  --hero: linear-gradient(135deg, #0b0c0e 0%, #23252b 55%, #4a4f57 100%);
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg text-text font-body antialiased;
+    min-height: 100dvh;
+  }
+  h1, h2, h3 {
+    @apply font-display;
+    letter-spacing: -0.01em;
+  }
+  [data-theme="bro"] h1,
+  [data-theme="bro"] h2 {
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--primary-strong));
+    outline-offset: 2px;
+  }
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.4;
+  }
+}
+
+@layer components {
+  .hero-surface {
+    background: var(--hero);
+    color: #fff;
+  }
+  .skeleton {
+    @apply relative overflow-hidden rounded-xl bg-surface-2;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(var(--surface) / 0.6), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+  .prose-coach p + p,
+  .prose-coach p + ul,
+  .prose-coach ul + p {
+    margin-top: 0.5rem;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
