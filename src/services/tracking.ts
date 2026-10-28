@@ -81,6 +81,20 @@ export async function deletePhoto(id: string, path: string) {
 export const photoUrl = (path: string) => db.photoUrl(path);
 
 // ---------- Bienestar ----------
+// ---------- Suplementos ----------
+export async function listSupplementLogs(from: string) {
+  return db.select("supplement_logs", { gte: { logged_on: from } });
+}
+
+export async function setSupplementTaken(date: string, supplement: string, taken: boolean) {
+  if (taken) {
+    const [row] = await db.upsert("supplement_logs", [{ logged_on: date, supplement, taken_at: new Date().toISOString() }], ["user_id", "logged_on", "supplement"]);
+    return row;
+  }
+  await db.remove("supplement_logs", { logged_on: date, supplement });
+  return null;
+}
+
 export async function getRecovery(date: string) {
   const [row] = await db.select("recovery_logs", { eq: { logged_on: date } });
   return row ?? null;

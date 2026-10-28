@@ -2,73 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tokens de diseño por tema. Los colores son tripletas RGB para admitir opacidad en Tailwind. */
+/*
+ * Tokens de diseño por tema. Los colores son tripletas RGB para admitir opacidad en Tailwind.
+ * Lenguaje común: fondo con degradado suave, tarjetas blancas muy redondeadas, botones en píldora,
+ * tarjeta destacada de progreso y barra de navegación flotante.
+ */
 :root,
 [data-theme="neutral"] {
-  --bg: 246 247 246;
+  /* Neutro: fondo blanco con los colores del logo (rosa, naranja, amarillo, verde, azul y violeta). */
+  --bg: 255 255 255;
   --surface: 255 255 255;
-  --surface-2: 238 241 239;
-  --border: 221 227 223;
-  --text: 31 42 39;
-  --muted: 94 107 103;
-  --primary: 79 154 143;
-  --primary-strong: 47 111 102;
+  --surface-2: 245 244 247;
+  --border: 232 230 236;
+  --text: 24 24 27;
+  --muted: 108 102 112;
+  --primary: 138 92 255;
+  --primary-strong: 109 63 240;
   --on-primary: 255 255 255;
-  --secondary: 214 231 227;
-  --accent: 197 139 78;
+  --secondary: 241 235 255;
+  --accent: 255 210 63;
+  --headline: 24 24 27;
   --success: 46 125 90;
   --warning: 166 112 20;
   --danger: 185 56 56;
-  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --radius-card: 1.25rem;
-  --shadow-card: 0 1px 2px rgb(16 24 20 / 0.04), 0 8px 24px -12px rgb(16 24 20 / 0.12);
-  --hero: linear-gradient(135deg, #2f6f66 0%, #4f9a8f 60%, #c58b4e 140%);
+  --feature-bg: linear-gradient(150deg, #6d3ff0 0%, #b04be0 55%, #ff4d7a 100%);
+  --feature-fg: 255 255 255;
+  --feature-ring: 255 210 63;
+  --page-bg: #ffffff;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display-weight: 500;
+  --display-em-style: normal;
+  --display-em-weight: 800;
+  --radius-card: 1.75rem;
+  --shadow-card: 0 1px 2px rgb(24 24 27 / 0.04), 0 12px 32px -16px rgb(24 24 27 / 0.18);
+  --streak-bg: linear-gradient(135deg, #ffe3ec 0%, #fff1d6 35%, #e3f8ee 68%, #e6f0ff 100%);
+  --streak-art: 109 63 240;
+  --hero: var(--feature-bg);
   color-scheme: light;
 }
 
-/* My Gym/Sis: elegante y atlético. Rosa empolvado, beige, crema y dorado suave. */
+/* My Gym/Sis: rosados, blanco, salmón y amarillo mantequilla. */
 [data-theme="sis"] {
-  --bg: 255 248 246;
+  --bg: 255 222 231;
   --surface: 255 255 255;
-  --surface-2: 251 239 236;
-  --border: 238 217 214;
-  --text: 51 39 45;
-  --muted: 118 98 107;
-  --primary: 217 141 164;
-  --primary-strong: 160 74 102;
+  --surface-2: 255 236 241;
+  --border: 249 205 216;
+  --text: 64 34 44;
+  --muted: 140 98 110;
+  --primary: 247 160 150;
+  --primary-strong: 201 58 98;
   --on-primary: 255 255 255;
-  --secondary: 235 196 207;
-  --accent: 197 164 109;
+  --secondary: 255 233 170;
+  --accent: 255 214 120;
+  --headline: 214 69 107;
   --success: 61 125 96;
   --warning: 160 110 20;
-  --danger: 178 58 72;
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
-  --radius-card: 1.5rem;
-  --shadow-card: 0 1px 2px rgb(51 39 45 / 0.04), 0 12px 28px -16px rgb(169 81 109 / 0.28);
-  --hero: linear-gradient(140deg, #33272d 0%, #a04a66 55%, #d98da4 85%, #c5a46d 120%);
+  --danger: 178 48 48;
+  --feature-bg: linear-gradient(150deg, #ef6f8e 0%, #f7927f 55%, #fbb57c 100%);
+  --feature-fg: 255 255 255;
+  --feature-ring: 255 228 140;
+  --page-bg: radial-gradient(80% 40% at 100% 0%, #ffe9b8 0%, rgba(255, 233, 184, 0) 60%),
+    radial-gradient(90% 50% at 0% 60%, #ffc9bb 0%, rgba(255, 201, 187, 0) 60%),
+    linear-gradient(180deg, #ffd3df 0%, #ffdfe7 50%, #ffe8ee 100%);
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display-weight: 500;
+  --display-em-style: normal;
+  --display-em-weight: 800;
+  --radius-card: 1.75rem;
+  --shadow-card: 0 1px 2px rgb(64 34 44 / 0.03), 0 14px 32px -18px rgb(214 69 107 / 0.3);
+  --streak-bg: radial-gradient(70% 80% at 100% 100%, #fff1bf 0%, rgba(255, 241, 191, 0) 70%),
+    linear-gradient(150deg, #ffe6ec 0%, #ffd6cc 100%);
+  --streak-art: 230 98 118;
+  --hero: var(--feature-bg);
 }
 
-/* Gym Bro: potente y orientado al rendimiento. Negro, grafito y acentos metálicos. */
+/* Gym Bro: tonos oscuros, grafito y acentos metálicos. */
 [data-theme="bro"] {
-  --bg: 16 17 20;
-  --surface: 32 33 38;
-  --surface-2: 42 43 49;
-  --border: 56 58 66;
+  --bg: 0 0 0;
+  --surface: 22 22 25;
+  --surface-2: 34 34 38;
+  --border: 46 46 52;
   --text: 245 245 245;
-  --muted: 166 173 183;
+  --muted: 160 166 176;
   --primary: 166 173 183;
-  --primary-strong: 232 234 237;
-  --on-primary: 16 17 20;
+  --primary-strong: 240 241 243;
+  --on-primary: 14 15 18;
   --secondary: 41 41 41;
-  --accent: 166 173 183;
+  --accent: 201 206 214;
+  --headline: 245 245 245;
   --success: 92 200 150;
   --warning: 230 182 90;
   --danger: 240 110 110;
-  --font-display: "Oswald", "Arial Narrow", Impact, sans-serif;
-  --radius-card: 0.9rem;
-  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 16px 32px -20px rgb(0 0 0 / 0.8);
-  --hero: linear-gradient(135deg, #0b0c0e 0%, #23252b 55%, #4a4f57 100%);
+  --feature-bg: linear-gradient(150deg, #3a3d45 0%, #1f2025 100%);
+  --feature-fg: 245 245 245;
+  --feature-ring: 211 228 150;
+  --page-bg: radial-gradient(90% 45% at 50% 0%, #17181b 0%, rgba(23, 24, 27, 0) 70%), #000000;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display-weight: 500;
+  --display-em-style: normal;
+  --display-em-weight: 800;
+  --radius-card: 1.75rem;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 18px 36px -22px rgb(0 0 0 / 0.9);
+  --streak-bg: linear-gradient(150deg, #2c2e35 0%, #17181c 100%);
+  --streak-art: 211 228 150;
+  --hero: var(--feature-bg);
   color-scheme: dark;
 }
 
@@ -78,6 +118,8 @@
   }
   body {
     @apply bg-bg text-text font-body antialiased;
+    background: var(--page-bg);
+    background-attachment: fixed;
     min-height: 100dvh;
   }
   h1, h2, h3 {
@@ -99,9 +141,45 @@
 }
 
 @layer components {
-  .hero-surface {
-    background: var(--hero);
-    color: #fff;
+  .hero-surface,
+  .feature-card {
+    background: var(--feature-bg);
+    color: rgb(var(--feature-fg));
+  }
+  .streak-card {
+    background: var(--streak-bg);
+  }
+  /* Titular grande: ligero con una palabra destacada en negrita. Misma tipografía en todos los temas. */
+  .display-hero {
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    color: rgb(var(--headline));
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+  .display-hero em {
+    font-style: var(--display-em-style);
+    font-weight: var(--display-em-weight);
+  }
+  /* En el tema neutro la palabra destacada lleva el arcoíris del logo. */
+  [data-theme="neutral"] .display-hero em {
+    background: linear-gradient(90deg, #ff4d7a, #ff9a3d 25%, #e0a800 45%, #20b673 62%, #1f9fe8 80%, #8a5cff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Tarjetas en tonos del logo (solo en el tema neutro). */
+  [data-theme="neutral"] .tint-pink { --tint: 230 57 105; background: #fff0f4; border-color: #ffd9e3; }
+  [data-theme="neutral"] .tint-orange { --tint: 214 104 18; background: #fff4ea; border-color: #ffe0c4; }
+  [data-theme="neutral"] .tint-yellow { --tint: 168 120 0; background: #fffae6; border-color: #ffeeb0; }
+  [data-theme="neutral"] .tint-green { --tint: 22 140 88; background: #ecfaf3; border-color: #c9f0dc; }
+  [data-theme="neutral"] .tint-blue { --tint: 22 118 196; background: #ebf6ff; border-color: #cbe6ff; }
+  [data-theme="neutral"] .tint-purple { --tint: 109 63 240; background: #f3eeff; border-color: #e0d4ff; }
+  [data-theme="neutral"] [class*="tint-"] .card-icon { color: rgb(var(--tint)); }
+  [data-theme="bro"] .display-hero {
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
   }
   .skeleton {
     @apply relative overflow-hidden rounded-xl bg-surface-2;
@@ -135,3 +213,4 @@
     transition-duration: 0.01ms !important;
   }
 }
+

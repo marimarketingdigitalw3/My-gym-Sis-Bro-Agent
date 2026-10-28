@@ -203,7 +203,7 @@ export default function SessionPage() {
           <p className="text-xs font-semibold text-muted">Ejercicio {idx + 1} de {planRows.length}</p>
           <div className="mt-1 flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold">{ex?.name ?? exerciseId}</h1>
+              <h1 className="display-hero text-3xl">{ex?.name ?? exerciseId}</h1>
               <p className="text-sm text-muted">{ex?.primaryMuscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => setSwapOpen(true)}><Repeat className="h-4 w-4" /> Sustituir</Button>
@@ -215,7 +215,7 @@ export default function SessionPage() {
             {ui.swaps[row.id] && <Badge tone="warning">Sustituido hoy</Badge>}
           </div>
 
-          <div className="mt-4 rounded-2xl bg-surface-2 p-3 text-sm">
+          <div className="mt-4 rounded-3xl bg-surface-2/70 p-3 text-sm">
             <p className="font-semibold">La última vez</p>
             <p className="text-muted">
               {previous.length
@@ -280,7 +280,7 @@ export default function SessionPage() {
             const done = sets.filter((s) => s.exercise_id === id && s.completed).length;
             return (
               <li key={r.id}>
-                <button type="button" onClick={() => { go(i); setListOpen(false); }} className={cx("flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-surface-2", i === idx && "bg-primary/10")}>
+                <button type="button" onClick={() => { go(i); setListOpen(false); }} className={cx("flex w-full items-center justify-between rounded-full px-4 py-2.5 text-left hover:bg-surface-2", i === idx && "bg-primary/10")}>
                   <span>{i + 1}. {EXERCISE_BY_ID[id]?.name}</span>
                   <span className="text-sm text-muted">{done}/{r.sets}</span>
                 </button>
@@ -410,7 +410,7 @@ function SessionSummary({ sessionId, title, durationS, sets, history }: { sessio
     <div className="mx-auto max-w-2xl space-y-4 p-4 pt-8">
       <div className="hero-surface rounded-card p-6 text-center shadow-card">
         <Trophy className="mx-auto h-10 w-10" />
-        <h1 className="mt-2 text-3xl font-semibold">¡Sesión completada!</h1>
+        <h1 className="mt-2 font-display text-3xl font-semibold">¡Sesión completada!</h1>
         <p className="mt-1 text-white/85">{title}</p>
       </div>
       <div className="grid grid-cols-3 gap-3">

@@ -53,7 +53,7 @@ function QuickLinks() {
     <Card className="p-2 md:hidden">
       <ul>
         {links.map(({ to, label, icon: Icon }) => (
-          <li key={to}><Link to={to} className="flex items-center gap-3 rounded-xl px-3 py-3 font-medium hover:bg-surface-2"><Icon className="h-5 w-5 text-primary-strong" /> {label}<ChevronRight className="ml-auto h-4 w-4 text-muted" /></Link></li>
+          <li key={to}><Link to={to} className="flex items-center gap-3 rounded-full px-4 py-3 font-medium hover:bg-surface-2"><Icon className="h-5 w-5 text-primary-strong" /> {label}<ChevronRight className="ml-auto h-4 w-4 text-muted" /></Link></li>
         ))}
       </ul>
     </Card>
@@ -122,9 +122,9 @@ function ThemeSection() {
   const { profile } = useBundle();
   const { run } = useSaver();
   const options: { key: ThemeName; label: string; swatch: string[] }[] = [
-    { key: "sis", label: "My Gym/Sis", swatch: ["#D98DA4", "#EBC4CF", "#FFF8F6", "#C5A46D"] },
-    { key: "bro", label: "Gym Bro", swatch: ["#101114", "#292929", "#A6ADB7", "#F5F5F5"] },
-    { key: "neutral", label: "Neutro", swatch: ["#2F6F66", "#4F9A8F", "#F6F7F6", "#C58B4E"] },
+    { key: "sis", label: "My Gym/Sis", swatch: ["#C93A62", "#F7927F", "#FFD3DF", "#FFD678"] },
+    { key: "bro", label: "Gym Bro", swatch: ["#000000", "#161619", "#F0F1F3", "#D3E496"] },
+    { key: "neutral", label: "Neutro", swatch: ["#6D3FF0", "#FF4D7A", "#FFD23F", "#35D68A"] },
   ];
   return (
     <Section id="tema" title="Apariencia" subtitle="El tema solo cambia el diseño. Tu plan no depende de él.">

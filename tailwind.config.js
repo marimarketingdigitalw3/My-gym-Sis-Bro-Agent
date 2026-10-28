@@ -16,6 +16,9 @@ export default {
         "on-primary": v("on-primary"),
         secondary: v("secondary"),
         accent: v("accent"),
+        headline: v("headline"),
+        "feature-fg": v("feature-fg"),
+        "feature-ring": v("feature-ring"),
         success: v("success"),
         warning: v("warning"),
         danger: v("danger"),
@@ -23,6 +26,7 @@ export default {
       fontFamily: {
         display: "var(--font-display)",
         body: "var(--font-body)",
+        logo: ["Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: { card: "var(--radius-card)" },
       boxShadow: { card: "var(--shadow-card)" },

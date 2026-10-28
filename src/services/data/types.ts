@@ -67,6 +67,6 @@ export const SINGLETON_TABLES = new Set<TableName>([
 /** Tablas que se borran al pedir "borrar mis datos" (se conserva la cuenta). */
 export const PERSONAL_TABLES: TableName[] = [
   "chat_messages", "chat_conversations", "exercise_sets", "workout_sessions", "workout_exercises", "workout_plans",
-  "meal_logs", "meal_plans", "water_logs", "progress_photos", "progress_measurements", "recovery_logs", "cycle_logs",
+  "meal_logs", "meal_plans", "water_logs", "supplement_logs", "progress_photos", "progress_measurements", "recovery_logs", "cycle_logs",
   "cycle_settings", "fitness_goals", "nutrition_preferences", "onboarding_responses",
 ];

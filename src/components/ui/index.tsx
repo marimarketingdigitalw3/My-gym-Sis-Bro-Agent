@@ -73,14 +73,14 @@ export function IconButton({ label, className, children, ...rest }: ButtonHTMLAt
 
 // ---------- Tarjetas ----------
 export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={clsx("rounded-card border border-border bg-surface p-4 shadow-card sm:p-5", className)} {...rest} />;
+  return <div className={clsx("rounded-card border border-border/60 bg-surface p-5 shadow-card sm:p-6", className)} {...rest} />;
 }
 
 export function CardHeader({ title, subtitle, action, icon }: { title: ReactNode; subtitle?: ReactNode; action?: ReactNode; icon?: ReactNode }) {
   return (
     <div className="mb-3 flex items-start justify-between gap-3">
       <div className="flex min-w-0 items-start gap-2.5">
-        {icon && <span className="mt-0.5 text-primary-strong">{icon}</span>}
+        {icon && <span className="card-icon mt-0.5 text-primary-strong">{icon}</span>}
         <div className="min-w-0">
           <h3 className="text-lg font-semibold leading-tight">{title}</h3>
           {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
@@ -142,7 +142,7 @@ export function Chip({ selected, onClick, children, className, disabled }: {
       onClick={onClick}
       className={clsx(
         "inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition disabled:opacity-40",
-        selected ? "border-primary-strong bg-primary-strong text-on-primary" : "border-border bg-surface text-text hover:bg-surface-2",
+        selected ? "border-primary-strong bg-primary-strong text-on-primary shadow-sm" : "border-border/70 bg-surface text-text shadow-sm hover:bg-surface-2",
         className,
       )}
     >
@@ -161,8 +161,8 @@ export function OptionCard({ selected, onClick, title, description, icon }: {
       aria-pressed={selected}
       onClick={onClick}
       className={clsx(
-        "flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition",
-        selected ? "border-primary-strong bg-primary/10 ring-2 ring-primary/30" : "border-border bg-surface hover:bg-surface-2",
+        "flex w-full items-start gap-3 rounded-3xl border p-4 text-left shadow-sm transition",
+        selected ? "border-primary-strong bg-surface ring-2 ring-primary-strong/40" : "border-border/70 bg-surface hover:bg-surface-2",
       )}
     >
       {icon && <span className="mt-0.5 text-primary-strong">{icon}</span>}
@@ -221,15 +221,17 @@ export function ProgressBar({ value, max = 100, label, className }: { value: num
   );
 }
 
-export function ProgressRing({ value, size = 64, stroke = 7, children, label }: { value: number; size?: number; stroke?: number; children?: ReactNode; label?: string }) {
+export function ProgressRing({ value, size = 64, stroke = 7, children, label, color = "var(--primary-strong)", track = "var(--surface-2)" }: {
+  value: number; size?: number; stroke?: number; children?: ReactNode; label?: string; color?: string; track?: string;
+}) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div className="relative inline-grid place-items-center" style={{ width: size, height: size }} role="img" aria-label={label ?? `${Math.round(pct)} %`}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--surface-2))" strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--primary-strong))" strokeWidth={stroke}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`rgb(${track})`} strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`rgb(${color})`} strokeWidth={stroke}
           strokeDasharray={c} strokeDashoffset={c - (pct / 100) * c} strokeLinecap="round" className="transition-all duration-700" />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-sm font-semibold">{children}</div>
@@ -322,7 +324,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
 
 export function Tabs<T extends string>({ value, onChange, items, label }: { value: T; onChange: (v: T) => void; items: { value: T; label: string }[]; label: string }) {
   return (
-    <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto rounded-full bg-surface-2 p-1">
+    <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto rounded-full border border-border/60 bg-surface/80 p-1 shadow-sm">
       {items.map((it) => (
         <button
           key={it.value}
@@ -332,7 +334,7 @@ export function Tabs<T extends string>({ value, onChange, items, label }: { valu
           onClick={() => onChange(it.value)}
           className={clsx(
             "whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition",
-            value === it.value ? "bg-surface text-text shadow-sm" : "text-muted hover:text-text",
+            value === it.value ? "bg-primary-strong text-on-primary shadow-sm" : "text-muted hover:text-text",
           )}
         >
           {it.label}
@@ -346,7 +348,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   return (
     <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-semibold sm:text-3xl">{title}</h1>
+        <h1 className="display-hero text-3xl sm:text-4xl">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {action}
@@ -356,7 +358,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 
 export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
-    <div className="rounded-2xl bg-surface-2 px-3.5 py-3">
+    <div className="rounded-3xl bg-surface-2 px-4 py-3">
       <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
       <p className="mt-1 text-xl font-semibold">{value}</p>
       {hint && <p className="text-xs text-muted">{hint}</p>}

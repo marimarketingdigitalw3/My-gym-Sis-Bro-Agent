@@ -36,6 +36,11 @@ export async function regeneratePlan(input: Parameters<typeof generatePlan>[0]):
   return saveGeneratedPlan(generatePlan(input));
 }
 
+export async function updatePlanSchedule(planId: string, schedule: WorkoutPlanRow["schedule"]) {
+  const [row] = await db.update("workout_plans", { id: planId }, { schedule });
+  return row;
+}
+
 export async function updatePlanExercise(id: string, patch: Partial<WorkoutExerciseRow>) {
   const [row] = await db.update("workout_exercises", { id }, patch);
   return row;
