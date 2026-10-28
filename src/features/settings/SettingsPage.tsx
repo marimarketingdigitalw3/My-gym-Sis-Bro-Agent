@@ -122,9 +122,9 @@ function ThemeSection() {
   const { profile } = useBundle();
   const { run } = useSaver();
   const options: { key: ThemeName; label: string; swatch: string[] }[] = [
-    { key: "sis", label: "My Gym/Sis", swatch: ["#D98DA4", "#EBC4CF", "#FFF8F6", "#C5A46D"] },
-    { key: "bro", label: "Gym Bro", swatch: ["#101114", "#292929", "#A6ADB7", "#F5F5F5"] },
-    { key: "neutral", label: "Neutro", swatch: ["#2F6F66", "#4F9A8F", "#F6F7F6", "#C58B4E"] },
+    { key: "sis", label: "My Gym/Sis", swatch: ["#C93A62", "#F7927F", "#FFD3DF", "#FFD678"] },
+    { key: "bro", label: "Gym Bro", swatch: ["#000000", "#161619", "#F0F1F3", "#D3E496"] },
+    { key: "neutral", label: "Neutro", swatch: ["#18181B", "#FFFFFF", "#F5F4F7", "#D3E496"] },
   ];
   return (
     <Section id="tema" title="Apariencia" subtitle="El tema solo cambia el diseño. Tu plan no depende de él.">

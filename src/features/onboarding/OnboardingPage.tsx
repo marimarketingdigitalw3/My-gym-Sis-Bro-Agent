@@ -366,9 +366,9 @@ function Section({ title, hint, children, error }: { title: string; hint?: React
 }
 
 const THEME_OPTIONS: { key: ThemeName; title: string; text: string; swatch: string[] }[] = [
-  { key: "sis", title: "My Gym/Sis", text: "Elegante y atlético, en rosa empolvado, crema y dorado.", swatch: ["#D98DA4", "#EBC4CF", "#FFF8F6", "#C5A46D"] },
-  { key: "bro", title: "Gym Bro", text: "Potente y enfocado en rendimiento, en negro y grafito.", swatch: ["#101114", "#292929", "#A6ADB7", "#F5F5F5"] },
-  { key: "neutral", title: "Neutro", text: "Limpio y sereno, en verde salvia y arena.", swatch: ["#2F6F66", "#4F9A8F", "#F6F7F6", "#C58B4E"] },
+  { key: "sis", title: "My Gym/Sis", text: "Femenino y luminoso, en rosados, salmón y amarillo.", swatch: ["#C93A62", "#F7927F", "#FFD3DF", "#FFD678"] },
+  { key: "bro", title: "Gym Bro", text: "Potente y enfocado en rendimiento, sobre fondo negro.", swatch: ["#000000", "#161619", "#F0F1F3", "#D3E496"] },
+  { key: "neutral", title: "Neutro", text: "Limpio y sereno, en blanco con botones negros.", swatch: ["#18181B", "#FFFFFF", "#F5F4F7", "#D3E496"] },
 ];
 
 function BasicStep({ a, set, errors }: { a: Answers; set: SetFn; errors: Record<string, string> }) {

@@ -37,7 +37,7 @@ const THEME_KEY = "mgs:theme";
 export function applyTheme(theme: ThemeName) {
   document.documentElement.dataset.theme = theme;
   const meta = document.querySelector('meta[name="theme-color"]');
-  meta?.setAttribute("content", theme === "bro" ? "#121317" : theme === "sis" ? "#FFF8F8" : "#F3EEF2");
+  meta?.setAttribute("content", theme === "bro" ? "#000000" : theme === "sis" ? "#FFD3DF" : "#FFFFFF");
   try {
     localStorage.setItem(THEME_KEY, theme);
   } catch {
