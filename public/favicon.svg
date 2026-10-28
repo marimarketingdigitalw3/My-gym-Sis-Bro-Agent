@@ -1,28 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF4D7A"/><stop offset=".22" stop-color="#FF9A3D"/><stop offset=".42" stop-color="#FFD23F"/><stop offset=".6" stop-color="#35D68A"/><stop offset=".8" stop-color="#2FB4FF"/><stop offset="1" stop-color="#8A5CFF"/></linearGradient>
-    <linearGradient id="rb" gradientUnits="userSpaceOnUse" x1="30" y1="0" x2="170" y2="0"><stop offset="0" stop-color="#FF4D7A"/><stop offset=".22" stop-color="#FF9A3D"/><stop offset=".42" stop-color="#FFD23F"/><stop offset=".6" stop-color="#35D68A"/><stop offset=".8" stop-color="#2FB4FF"/><stop offset="1" stop-color="#8A5CFF"/></linearGradient>
-    <radialGradient id="fur" cx=".42" cy=".3" r=".8"><stop offset="0" stop-color="#FBF5EA"/><stop offset=".6" stop-color="#EFE4D2"/><stop offset="1" stop-color="#D6C4A7"/></radialGradient>
-    <radialGradient id="skin" cx=".45" cy=".38" r=".7"><stop offset="0" stop-color="#F9E0CA"/><stop offset="1" stop-color="#E9C2A2"/></radialGradient>
-    <clipPath id="body"><path d="M100 18 C142 18 164 50 166 92 C168 120 176 150 178 180 C180 206 168 222 150 222 L50 222 C32 222 20 206 22 180 C24 150 32 120 34 92 C36 50 58 18 100 18 Z"/></clipPath>
-    <clipPath id="tile"><rect width="200" height="200" rx="58"/></clipPath>
-  </defs>
-  <rect width="200" height="200" rx="58" fill="url(#bg)"/>
-  <g clip-path="url(#tile)">
-    <svg x="9" y="32" width="182" height="168" viewBox="24 10 152 140">
-      <path d="M100 18 C142 18 164 50 166 92 C168 120 176 150 178 180 C180 206 168 222 150 222 L50 222 C32 222 20 206 22 180 C24 150 32 120 34 92 C36 50 58 18 100 18 Z" fill="url(#fur)"/>
-      <g clip-path="url(#body)"><path d="M10 52 Q100 20 190 52 L190 66 Q100 34 10 66 Z" fill="url(#rb)"/></g>
-      <ellipse cx="100" cy="89" rx="40" ry="34" fill="url(#skin)"/>
-      <ellipse cx="76" cy="100" rx="8" ry="5" fill="#F28C96" opacity=".55"/>
-      <ellipse cx="124" cy="100" rx="8" ry="5" fill="#F28C96" opacity=".55"/>
-      <circle cx="85" cy="88" r="5" fill="#1B1512"/><circle cx="86.6" cy="86.4" r="1.5" fill="#fff"/>
-      <circle cx="115" cy="88" r="5" fill="#1B1512"/><circle cx="116.6" cy="86.4" r="1.5" fill="#fff"/>
-      <path d="M94 100 Q100 105 106 100" fill="none" stroke="#1B1512" stroke-width="2.6" stroke-linecap="round"/>
-      <rect x="44" y="167" width="112" height="6" rx="3" fill="#3A3444"/>
-      <rect x="44" y="152" width="11" height="36" rx="4.5" fill="url(#rb)"/><rect x="34" y="158" width="9" height="24" rx="3.5" fill="url(#rb)"/>
-      <rect x="145" y="152" width="11" height="36" rx="4.5" fill="url(#rb)"/><rect x="157" y="158" width="9" height="24" rx="3.5" fill="url(#rb)"/>
-      <ellipse cx="64" cy="152" rx="13" ry="24" fill="url(#fur)" transform="rotate(-28 64 152)"/>
-      <ellipse cx="136" cy="152" rx="13" ry="24" fill="url(#fur)" transform="rotate(28 136 152)"/>
-    </svg>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="GYM BOT ícono">
+<title>GYM BOT ícono</title>
+<defs>
+<linearGradient id="gb-rb" gradientUnits="userSpaceOnUse" x1="30" y1="0" x2="170" y2="0"><stop offset="0" stop-color="#FF4D7A"/><stop offset="0.22" stop-color="#FF9A3D"/><stop offset="0.42" stop-color="#FFD23F"/><stop offset="0.6" stop-color="#35D68A"/><stop offset="0.8" stop-color="#2FB4FF"/><stop offset="1" stop-color="#8A5CFF"/></linearGradient>
+<radialGradient id="gb-fur-fill" cx=".42" cy=".3" r=".8"><stop offset="0" stop-color="#FBF5EA"/><stop offset=".6" stop-color="#EFE4D2"/><stop offset="1" stop-color="#D6C4A7"/></radialGradient>
+<radialGradient id="gb-skin" cx=".45" cy=".38" r=".7"><stop offset="0" stop-color="#F9E0CA"/><stop offset="1" stop-color="#E9C2A2"/></radialGradient>
+<filter id="gb-fur" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="gb-blur3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+<clipPath id="gb-body-clip"><path d="M100 18 C142 18 164 50 166 92 C168 120 176 150 178 180 C180 206 168 222 150 222 L50 222 C32 222 20 206 22 180 C24 150 32 120 34 92 C36 50 58 18 100 18 Z"/></clipPath><linearGradient id="gb-icon-rb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF4D7A"/><stop offset="0.22" stop-color="#FF9A3D"/><stop offset="0.42" stop-color="#FFD23F"/><stop offset="0.6" stop-color="#35D68A"/><stop offset="0.8" stop-color="#2FB4FF"/><stop offset="1" stop-color="#8A5CFF"/></linearGradient><clipPath id="gb-icon-clip"><rect width="200" height="200" rx="58"/></clipPath>
+</defs>
+<g clip-path="url(#gb-icon-clip)">
+<rect width="200" height="200" fill="url(#gb-icon-rb)"/>
+<svg x="9" y="32" width="182" height="168" viewBox="24 10 152 140">
+<g filter="url(#gb-fur)">
+<path d="M100 18 C142 18 164 50 166 92 C168 120 176 150 178 180 C180 206 168 222 150 222 L50 222 C32 222 20 206 22 180 C24 150 32 120 34 92 C36 50 58 18 100 18 Z" fill="url(#gb-fur-fill)"/>
+<g clip-path="url(#gb-body-clip)"><path d="M10 52 Q100 20 190 52 L190 66 Q100 34 10 66 Z" fill="url(#gb-rb)"/></g>
+</g>
+<ellipse cx="100" cy="88" rx="43" ry="37" fill="#B49A78" opacity=".55" filter="url(#gb-blur3)"/>
+<ellipse cx="100" cy="89" rx="40" ry="34" fill="url(#gb-skin)"/>
+<ellipse cx="76" cy="100" rx="8" ry="5" fill="#F28C96" opacity=".55" filter="url(#gb-blur3)"/>
+<ellipse cx="124" cy="100" rx="8" ry="5" fill="#F28C96" opacity=".55" filter="url(#gb-blur3)"/>
+<circle cx="85" cy="88" r="5" fill="#1B1512"/><circle cx="86.6" cy="86.4" r="1.5" fill="#FFFFFF"/>
+<circle cx="115" cy="88" r="5" fill="#1B1512"/><circle cx="116.6" cy="86.4" r="1.5" fill="#FFFFFF"/>
+<path d="M94 100 Q100 105 106 100" fill="none" stroke="#1B1512" stroke-width="2.6" stroke-linecap="round"/>
+<rect x="44" y="167" width="112" height="6" rx="3" fill="#3A3444"/>
+<rect x="44" y="152" width="11" height="36" rx="4.5" fill="url(#gb-rb)"/>
+<rect x="34" y="158" width="9" height="24" rx="3.5" fill="url(#gb-rb)"/>
+<rect x="145" y="152" width="11" height="36" rx="4.5" fill="url(#gb-rb)"/>
+<rect x="157" y="158" width="9" height="24" rx="3.5" fill="url(#gb-rb)"/>
+<g filter="url(#gb-fur)">
+<ellipse cx="64" cy="152" rx="13" ry="24" fill="url(#gb-fur-fill)" transform="rotate(-28 64 152)"/>
+<ellipse cx="136" cy="152" rx="13" ry="24" fill="url(#gb-fur-fill)" transform="rotate(28 136 152)"/>
+</g>
+</svg>
+</g>
 </svg>
