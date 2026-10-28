@@ -1,0 +1,11 @@
+{
+  "name": "sis-bro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Programa de 66 días que adapta entrenamiento, comida y hábitos a la fase del ciclo.",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --directory app",
+    "test": "node --test tests/*.test.mjs"
+  }
+}
