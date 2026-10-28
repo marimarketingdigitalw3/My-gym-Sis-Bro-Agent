@@ -24,7 +24,7 @@ export function WaterTracker({ date, ml, goalMl, onChange }: { date: string; ml:
     }
   }
   return (
-    <Card>
+    <Card className="tint-blue">
       <CardHeader title="Hidratación" subtitle={`Guía general: ${(goal / 1000).toFixed(1)} L al día`} icon={<Droplets className="h-5 w-5" />} />
       <div className="flex items-center gap-3">
         <IconButton label="Quitar un vaso" onClick={() => change(-GLASS)} disabled={busy || ml === 0} className="border border-border"><Minus className="h-4 w-4" /></IconButton>

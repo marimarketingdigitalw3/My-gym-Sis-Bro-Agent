@@ -1,5 +1,8 @@
 import { ArrowRight, Bot, CalendarDays, CalendarHeart, Check, CheckCircle2, ChevronRight, Dumbbell, Flame, Snowflake, Target, Trophy, UtensilsCrossed } from "lucide-react";
 import { AthleteArt } from "@/components/AthleteArt";
+import { GymBotMascot } from "@/components/GymBot";
+import { useGymBotMood } from "@/app/gymbot";
+import { MOOD_LABELS } from "@/lib/gymbotMood";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useBundle } from "@/app/providers";
@@ -29,6 +32,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const today = todayISO();
+  const mood = useGymBotMood();
   const [starting, setStarting] = useState(false);
 
   const { data, loading, error, reload, setData } = useAsync(async () => {
@@ -99,10 +103,20 @@ export default function DashboardPage() {
             <span className="block">{theme === "sis" ? <>Hoy toca <em>brillar</em></> : theme === "bro" ? "A darle con todo" : "Tu resumen de hoy"}</span>
           </h1>
         </div>
-        <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-surface px-3 py-1.5 text-sm font-semibold shadow-sm" title="Racha actual">
-          <Flame className="h-4 w-4 text-headline" aria-hidden /> {streak.streak} <span className="text-xs font-medium text-muted">días</span>
-        </span>
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          <GymBotMascot mood={mood?.mood} animate={Boolean(mood)} className="h-28 w-auto sm:h-32" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-surface px-3 py-1.5 text-sm font-semibold shadow-sm" title="Racha actual">
+            <Flame className="h-4 w-4 text-headline" aria-hidden /> {streak.streak} <span className="text-xs font-medium text-muted">días</span>
+          </span>
+        </div>
       </section>
+
+      {mood && (
+        <p className="relative rounded-3xl rounded-tr-md border border-border/60 bg-surface px-4 py-3 text-[15px] shadow-card" role="status">
+          <span className="mb-0.5 block text-xs font-semibold uppercase tracking-wide text-muted">Gym Bot · {MOOD_LABELS[mood.mood]}</span>
+          {mood.message}
+        </p>
+      )}
 
       <div className="flex items-center gap-4">
         <p className="flex items-baseline gap-3 tabular-nums">
@@ -219,7 +233,7 @@ export default function DashboardPage() {
 
       {/* Semana en píldoras */}
       <div className="grid gap-5 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="tint-blue lg:col-span-2">
           <CardHeader title="Tu semana" subtitle={`${completedThisWeek} de ${active?.plan.days_per_week ?? 0} sesiones completadas`}
             action={<Link to="/workouts" className="text-sm font-semibold text-primary-strong">Ver plan</Link>} />
           <ol className="grid grid-cols-7 gap-1.5">
@@ -249,7 +263,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {/* Objetivo */}
-        <Card>
+        <Card className="tint-green">
           <CardHeader title="Tu objetivo" subtitle={GOAL_LABELS[goal]} icon={<Target className="h-5 w-5" />} />
           {weightProgress !== null && target ? (
             <>
@@ -266,7 +280,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Nutrición */}
-        <Card>
+        <Card className="tint-orange">
           <CardHeader title="Nutrición de hoy" icon={<UtensilsCrossed className="h-5 w-5" />} action={<Link to="/nutrition" className="text-sm font-semibold text-primary-strong">Abrir</Link>} />
           {nutrition.targets && caloriesVisible ? (
             <div className="space-y-2.5 text-sm">
@@ -286,7 +300,7 @@ export default function DashboardPage() {
         )}
 
         {/* Peso */}
-        <Card className="md:col-span-2">
+        <Card className="tint-purple md:col-span-2">
           <CardHeader title="Evolución del peso" icon={<Target className="h-5 w-5" />} action={<Link to="/progress" className="text-sm font-semibold text-primary-strong">Registrar</Link>} />
           {weights.length >= 2
             ? <TrendChart data={weights} unit="kg" label="Peso" height={180} />
@@ -294,7 +308,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Fuerza */}
-        <Card>
+        <Card className="tint-yellow">
           <CardHeader title="Récords recientes" icon={<Trophy className="h-5 w-5" />} />
           {prs.length ? (
             <ul className="space-y-2">
@@ -309,7 +323,7 @@ export default function DashboardPage() {
         </Card>
 
         {cycleEstimate && cycleTip && (
-          <Card className="md:col-span-2 lg:col-span-1">
+          <Card className="tint-pink md:col-span-2 lg:col-span-1">
             <CardHeader title="Cycle Wellness" icon={<CalendarHeart className="h-5 w-5" />} action={<Link to="/cycle" className="text-sm font-semibold text-primary-strong">Abrir</Link>} />
             {cycleEstimate.hasData && cycleEstimate.phase && (
               <Badge tone="primary">{PHASE_INFO[cycleEstimate.phase].name}{cycleEstimate.currentDay ? ` · día ${cycleEstimate.currentDay}` : ""}</Badge>
@@ -321,7 +335,7 @@ export default function DashboardPage() {
 
         {/* Coach */}
         <Link to="/coach" className="group md:col-span-2 lg:col-span-1">
-          <Card className="flex h-full items-center gap-4 transition group-hover:border-primary-strong">
+          <Card className="tint-purple flex h-full items-center gap-4 transition group-hover:border-primary-strong">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary-strong"><Bot className="h-6 w-6" /></span>
             <span className="flex-1">
               <span className="block font-semibold">Pregúntale a Gym AI Coach</span>

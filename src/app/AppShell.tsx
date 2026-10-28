@@ -4,6 +4,10 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { db } from "@/services/data";
 import { useBundle } from "./providers";
 import { BrandMark } from "@/components/BrandMark";
+import { GymBotIcon } from "@/components/GymBot";
+import { MOOD_LABELS } from "@/lib/gymbotMood";
+import { useState } from "react";
+import { GymBotMoodProvider, useGymBotMood } from "./gymbot";
 
 export function useNavItems() {
   const bundle = useBundle();
@@ -37,7 +41,36 @@ export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
   );
 }
 
+/** Gym Bot animado según tu progreso; al tocarlo muestra lo que piensa. */
+export function GymBotBuddy({ size = 48 }: { size?: number }) {
+  const mood = useGymBotMood();
+  const [open, setOpen] = useState(false);
+  const label = mood ? `Gym Bot está ${MOOD_LABELS[mood.mood].toLowerCase()}: ${mood.message}` : "Gym Bot";
+  return (
+    <div className="relative shrink-0">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-label={label} aria-expanded={open}
+        className="block rounded-[30%] transition active:scale-95">
+        <GymBotIcon size={size} mood={mood?.mood} animate className="shadow-md" />
+      </button>
+      {open && mood && (
+        <p role="status" className="absolute left-0 top-full z-40 mt-2 w-64 rounded-3xl rounded-tl-md border border-border/60 bg-surface p-3 text-sm shadow-card">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-muted">Gym Bot · {MOOD_LABELS[mood.mood]}</span>
+          {mood.message}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function AppShell() {
+  return (
+    <GymBotMoodProvider>
+      <Shell />
+    </GymBotMoodProvider>
+  );
+}
+
+function Shell() {
   const bundle = useBundle();
   const items = useNavItems();
   const mobile = items.filter((i) => MOBILE_PRIMARY.includes(i.to));
@@ -50,7 +83,7 @@ export function AppShell() {
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border/60 bg-surface/70 px-4 py-6 backdrop-blur-xl md:flex">
         <BrandMark />
         <div className="mt-8 flex items-center gap-3 rounded-3xl bg-surface-2/70 p-3">
-          <Avatar name={name} size={40} />
+          <GymBotBuddy size={44} />
           <div className="min-w-0">
             <p className="truncate font-semibold">{greeting()}</p>
             <p className="truncate text-sm text-muted">{name}</p>
@@ -73,7 +106,7 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+12px)] backdrop-blur-md md:hidden">
           <div className="flex min-w-0 items-center gap-3">
-            <Avatar name={name} />
+            <GymBotBuddy />
             <div className="min-w-0 leading-tight">
               <p className="truncate text-[17px] font-semibold">{greeting()}</p>
               <p className="truncate text-sm text-muted">{name}</p>

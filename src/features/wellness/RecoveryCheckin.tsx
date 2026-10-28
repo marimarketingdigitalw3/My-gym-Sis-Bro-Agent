@@ -40,7 +40,7 @@ export function RecoveryCheckin({ date, value, onSaved }: { date: string; value:
 
   if (!editing && value) {
     return (
-      <Card>
+      <Card className="tint-pink">
         <CardHeader title="Bienestar de hoy" icon={<HeartPulse className="h-5 w-5" />} action={<Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Editar</Button>} />
         <div className="grid grid-cols-3 gap-2 text-center text-sm">
           <div className="rounded-3xl bg-surface-2/70 p-2"><p className="text-muted">Energía</p><p className="font-semibold">{value.energy ?? "—"}/5</p></div>
@@ -53,7 +53,7 @@ export function RecoveryCheckin({ date, value, onSaved }: { date: string; value:
   }
 
   return (
-    <Card>
+    <Card className="tint-pink">
       <CardHeader title="¿Cómo te sientes hoy?" subtitle="Ajustamos las recomendaciones a tu recuperación." icon={<HeartPulse className="h-5 w-5" />} />
       <div className="space-y-3 text-sm">
         <div>

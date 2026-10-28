@@ -9,40 +9,40 @@
  */
 :root,
 [data-theme="neutral"] {
-  /* Neutro: lavanda y melocotón, botones negros y acento lima. */
+  /* Neutro: fondo blanco con los colores del logo (rosa, naranja, amarillo, verde, azul y violeta). */
   --bg: 255 255 255;
   --surface: 255 255 255;
   --surface-2: 245 244 247;
   --border: 232 230 236;
   --text: 24 24 27;
   --muted: 108 102 112;
-  --primary: 24 24 27;
-  --primary-strong: 24 24 27;
+  --primary: 138 92 255;
+  --primary-strong: 109 63 240;
   --on-primary: 255 255 255;
-  --secondary: 236 228 240;
-  --accent: 211 228 150;
+  --secondary: 241 235 255;
+  --accent: 255 210 63;
   --headline: 24 24 27;
   --success: 46 125 90;
   --warning: 166 112 20;
   --danger: 185 56 56;
-  --feature-bg: linear-gradient(150deg, #2c2c30 0%, #1b1b1e 100%);
+  --feature-bg: linear-gradient(150deg, #6d3ff0 0%, #b04be0 55%, #ff4d7a 100%);
   --feature-fg: 255 255 255;
-  --feature-ring: 211 228 150;
+  --feature-ring: 255 210 63;
   --page-bg: #ffffff;
-  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --display-weight: 500;
   --display-em-style: normal;
-  --display-em-weight: 700;
+  --display-em-weight: 800;
   --radius-card: 1.75rem;
   --shadow-card: 0 1px 2px rgb(24 24 27 / 0.04), 0 12px 32px -16px rgb(24 24 27 / 0.18);
-  --streak-bg: linear-gradient(140deg, #f7dceb 0%, #f9e7da 100%);
-  --streak-art: 24 24 27;
+  --streak-bg: linear-gradient(135deg, #ffe3ec 0%, #fff1d6 35%, #e3f8ee 68%, #e6f0ff 100%);
+  --streak-art: 109 63 240;
   --hero: var(--feature-bg);
   color-scheme: light;
 }
 
-/* My Gym/Sis: rosados, blanco, salmón y amarillo mantequilla; titulares serif con cursiva. */
+/* My Gym/Sis: rosados, blanco, salmón y amarillo mantequilla. */
 [data-theme="sis"] {
   --bg: 255 222 231;
   --surface: 255 255 255;
@@ -65,11 +65,11 @@
   --page-bg: radial-gradient(80% 40% at 100% 0%, #ffe9b8 0%, rgba(255, 233, 184, 0) 60%),
     radial-gradient(90% 50% at 0% 60%, #ffc9bb 0%, rgba(255, 201, 187, 0) 60%),
     linear-gradient(180deg, #ffd3df 0%, #ffdfe7 50%, #ffe8ee 100%);
-  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
-  --font-body: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --display-weight: 600;
-  --display-em-style: italic;
-  --display-em-weight: 500;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display-weight: 500;
+  --display-em-style: normal;
+  --display-em-weight: 800;
   --radius-card: 1.75rem;
   --shadow-card: 0 1px 2px rgb(64 34 44 / 0.03), 0 14px 32px -18px rgb(214 69 107 / 0.3);
   --streak-bg: radial-gradient(70% 80% at 100% 100%, #fff1bf 0%, rgba(255, 241, 191, 0) 70%),
@@ -99,11 +99,11 @@
   --feature-fg: 245 245 245;
   --feature-ring: 211 228 150;
   --page-bg: radial-gradient(90% 45% at 50% 0%, #17181b 0%, rgba(23, 24, 27, 0) 70%), #000000;
-  --font-display: "Oswald", "Arial Narrow", Impact, sans-serif;
-  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --display-weight: 500;
   --display-em-style: normal;
-  --display-em-weight: 600;
+  --display-em-weight: 800;
   --radius-card: 1.75rem;
   --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 18px 36px -22px rgb(0 0 0 / 0.9);
   --streak-bg: linear-gradient(150deg, #2c2e35 0%, #17181c 100%);
@@ -149,7 +149,7 @@
   .streak-card {
     background: var(--streak-bg);
   }
-  /* Titular grande: ligero con una palabra destacada (cursiva serif en Sis, negrita en el resto). */
+  /* Titular grande: ligero con una palabra destacada en negrita. Misma tipografía en todos los temas. */
   .display-hero {
     font-family: var(--font-display);
     font-weight: var(--display-weight);
@@ -162,6 +162,21 @@
     font-style: var(--display-em-style);
     font-weight: var(--display-em-weight);
   }
+  /* En el tema neutro la palabra destacada lleva el arcoíris del logo. */
+  [data-theme="neutral"] .display-hero em {
+    background: linear-gradient(90deg, #ff4d7a, #ff9a3d 25%, #e0a800 45%, #20b673 62%, #1f9fe8 80%, #8a5cff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Tarjetas en tonos del logo (solo en el tema neutro). */
+  [data-theme="neutral"] .tint-pink { --tint: 230 57 105; background: #fff0f4; border-color: #ffd9e3; }
+  [data-theme="neutral"] .tint-orange { --tint: 214 104 18; background: #fff4ea; border-color: #ffe0c4; }
+  [data-theme="neutral"] .tint-yellow { --tint: 168 120 0; background: #fffae6; border-color: #ffeeb0; }
+  [data-theme="neutral"] .tint-green { --tint: 22 140 88; background: #ecfaf3; border-color: #c9f0dc; }
+  [data-theme="neutral"] .tint-blue { --tint: 22 118 196; background: #ebf6ff; border-color: #cbe6ff; }
+  [data-theme="neutral"] .tint-purple { --tint: 109 63 240; background: #f3eeff; border-color: #e0d4ff; }
+  [data-theme="neutral"] [class*="tint-"] .card-icon { color: rgb(var(--tint)); }
   [data-theme="bro"] .display-hero {
     text-transform: uppercase;
     letter-spacing: 0.01em;
@@ -198,3 +213,34 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Gym Bot: animaciones según el estado de ánimo (se desactivan con reducción de movimiento). */
+.gb-body,
+.gb-lift,
+.gb-tear,
+.gb-zz,
+.gb-sparkle {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.gb-feliz .gb-body { animation: gb-hop 1.5s ease-in-out infinite; }
+.gb-feliz .gb-sparkle { transform-origin: 50% 50%; animation: gb-twinkle 1.5s ease-in-out infinite; }
+.gb-motivado .gb-lift { animation: gb-lift 1.3s ease-in-out infinite; }
+.gb-motivado .gb-body { animation: gb-bob 1.3s ease-in-out infinite; }
+.gb-cansado .gb-body { animation: gb-sway 3.4s ease-in-out infinite; }
+.gb-cansado .gb-zz { animation: gb-float 2.6s ease-in-out infinite; }
+.gb-triste .gb-body { animation: gb-droop 3s ease-in-out infinite; }
+.gb-triste .gb-tear { animation: gb-drip 2.4s ease-in infinite; }
+.gb-enojado .gb-body { animation: gb-shake 2s ease-in-out infinite; }
+.gb-tranquilo .gb-body { animation: gb-breathe 3.6s ease-in-out infinite; }
+
+@keyframes gb-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14px) scale(1.02, .98); } 60% { transform: translateY(0) scale(1.03, .97); } }
+@keyframes gb-twinkle { 0%, 100% { opacity: .3; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.1); } }
+@keyframes gb-lift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-34px); } }
+@keyframes gb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes gb-sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes gb-float { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+@keyframes gb-droop { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(3px) scaleY(.97); } }
+@keyframes gb-drip { 0% { opacity: 0; transform: translateY(-4px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
+@keyframes gb-shake { 0%, 60%, 100% { transform: translateX(0); } 65%, 75% { transform: translateX(-4px) rotate(-2deg); } 70%, 80% { transform: translateX(4px) rotate(2deg); } }
+@keyframes gb-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }

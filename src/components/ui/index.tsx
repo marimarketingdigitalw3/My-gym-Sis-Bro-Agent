@@ -80,7 +80,7 @@ export function CardHeader({ title, subtitle, action, icon }: { title: ReactNode
   return (
     <div className="mb-3 flex items-start justify-between gap-3">
       <div className="flex min-w-0 items-start gap-2.5">
-        {icon && <span className="mt-0.5 text-primary-strong">{icon}</span>}
+        {icon && <span className="card-icon mt-0.5 text-primary-strong">{icon}</span>}
         <div className="min-w-0">
           <h3 className="text-lg font-semibold leading-tight">{title}</h3>
           {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}

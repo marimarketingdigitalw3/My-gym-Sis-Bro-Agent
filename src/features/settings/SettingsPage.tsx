@@ -124,7 +124,7 @@ function ThemeSection() {
   const options: { key: ThemeName; label: string; swatch: string[] }[] = [
     { key: "sis", label: "My Gym/Sis", swatch: ["#C93A62", "#F7927F", "#FFD3DF", "#FFD678"] },
     { key: "bro", label: "Gym Bro", swatch: ["#000000", "#161619", "#F0F1F3", "#D3E496"] },
-    { key: "neutral", label: "Neutro", swatch: ["#18181B", "#FFFFFF", "#F5F4F7", "#D3E496"] },
+    { key: "neutral", label: "Neutro", swatch: ["#6D3FF0", "#FF4D7A", "#FFD23F", "#35D68A"] },
   ];
   return (
     <Section id="tema" title="Apariencia" subtitle="El tema solo cambia el diseño. Tu plan no depende de él.">

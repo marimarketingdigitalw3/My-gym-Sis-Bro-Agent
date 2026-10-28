@@ -368,7 +368,7 @@ function Section({ title, hint, children, error }: { title: string; hint?: React
 const THEME_OPTIONS: { key: ThemeName; title: string; text: string; swatch: string[] }[] = [
   { key: "sis", title: "My Gym/Sis", text: "Femenino y luminoso, en rosados, salmón y amarillo.", swatch: ["#C93A62", "#F7927F", "#FFD3DF", "#FFD678"] },
   { key: "bro", title: "Gym Bro", text: "Potente y enfocado en rendimiento, sobre fondo negro.", swatch: ["#000000", "#161619", "#F0F1F3", "#D3E496"] },
-  { key: "neutral", title: "Neutro", text: "Limpio y sereno, en blanco con botones negros.", swatch: ["#18181B", "#FFFFFF", "#F5F4F7", "#D3E496"] },
+  { key: "neutral", title: "Neutro", text: "Limpio y alegre: fondo blanco con los colores del logo.", swatch: ["#6D3FF0", "#FF4D7A", "#FFD23F", "#35D68A"] },
 ];
 
 function BasicStep({ a, set, errors }: { a: Answers; set: SetFn; errors: Record<string, string> }) {
