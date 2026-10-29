@@ -93,6 +93,31 @@ const POSES: Record<string, [Pose, Pose]> = {
     s({ elbow: [101, 82], wrist: [102, 108] }),
     s({ head: [104, 40], elbow: [104, 28], wrist: [110, 6] }),
   ],
+  // Bicicleta estática: sentado en el sillín, manos en el manubrio, piernas pedaleando.
+  bike: [
+    { head: [120, 34], neck: [112, 50], hip: [70, 104], knee: [104, 124], ankle: [98, 158], toe: [110, 160], kneeF: [90, 144], ankleF: [74, 164], toeF: [86, 166], elbow: [132, 78], wrist: [150, 90] },
+    { head: [120, 34], neck: [112, 50], hip: [70, 104], knee: [90, 144], ankle: [74, 164], toe: [86, 166], kneeF: [104, 124], ankleF: [98, 158], toeF: [110, 160], elbow: [132, 78], wrist: [150, 90] },
+  ],
+  // Cinta: caminata o trote sobre la banda.
+  treadmill: [
+    s({ head: [104, 46], neck: [102, 62], hip: [100, 114], knee: [120, 144], ankle: [114, 168], toe: [126, 170], kneeF: [92, 150], ankleF: [82, 172], toeF: [90, 175], elbow: [90, 86], wrist: [104, 100], elbowF: [114, 86], wristF: [126, 74] }),
+    s({ head: [104, 46], neck: [102, 62], hip: [100, 114], knee: [92, 150], ankle: [82, 172], toe: [90, 175], kneeF: [120, 144], ankleF: [114, 168], toeF: [126, 170], elbow: [114, 86], wrist: [126, 74], elbowF: [90, 86], wristF: [104, 100] }),
+  ],
+  // Elíptica: de pie, brazos en los mangos, piernas en elipse.
+  elliptical: [
+    { head: [102, 34], neck: [100, 50], hip: [98, 104], knee: [118, 134], ankle: [120, 162], toe: [132, 164], kneeF: [84, 136], ankleF: [78, 164], toeF: [90, 166], elbow: [114, 78], wrist: [134, 60], elbowF: [88, 78], wristF: [110, 92] },
+    { head: [102, 34], neck: [100, 50], hip: [98, 104], knee: [84, 136], ankle: [78, 164], toe: [90, 166], kneeF: [118, 134], ankleF: [120, 162], toeF: [132, 164], elbow: [88, 78], wrist: [110, 92], elbowF: [114, 78], wristF: [134, 60] },
+  ],
+  // Remo: sentado, se desliza atrás y tira del mango.
+  rower: [
+    { head: [116, 88], neck: [108, 102], hip: [84, 150], knee: [122, 128], ankle: [146, 156], toe: [156, 160], elbow: [128, 118], wrist: [148, 130] },
+    { head: [78, 84], neck: [84, 100], hip: [66, 150], knee: [104, 146], ankle: [146, 156], toe: [156, 160], elbow: [74, 128], wrist: [100, 128] },
+  ],
+};
+
+/** Ejercicios de cardio con máquina propia. */
+const MACHINE_BY_ID: Record<string, string> = {
+  "stationary-bike": "bike", "treadmill-incline-walk": "treadmill", elliptical: "elliptical", "rowing-machine": "rower",
 };
 
 function poseKey(ex: Pick<Exercise, "pattern" | "equipment" | "id">): string {
@@ -102,7 +127,7 @@ function poseKey(ex: Pick<Exercise, "pattern" | "equipment" | "id">): string {
   if (p === "core_flexion") return "crunch";
   if (p === "core_rotation") return "rotation";
   if (p === "carry") return "walk";
-  if (p === "cardio") return "run";
+  if (p === "cardio") return MACHINE_BY_ID[ex.id] ?? "run";
   if (p === "mobility") return "stretch";
   return POSES[p] ? p : "stretch";
 }
@@ -146,10 +171,12 @@ type Rig = ReturnType<typeof rig>;
 type Joint = Exclude<keyof Rig, "headAngle">;
 
 interface Palette { skin: string; skinFar: string; top: string; topFar: string; bottom: string; bottomFar: string; hair: string; shoe: string; shoeFar: string; accent: string }
+// Estilo plano de la referencia: formas suaves sin contorno, piel durazno y ropa lila o violeta.
 const PALETTES: Record<"female" | "male", Palette> = {
-  female: { skin: "#E9B897", skinFar: "#D09A78", top: "#E2557B", topFar: "#C2405F", bottom: "#2E2A3A", bottomFar: "#4A4459", hair: "#4A2E22", shoe: "#F3F4F6", shoeFar: "#C9CCD3", accent: "#FFD23F" },
-  male: { skin: "#C98E6A", skinFar: "#AE7553", top: "#2F6FDB", topFar: "#2459B5", bottom: "#1F2430", bottomFar: "#3A4150", hair: "#2B201B", shoe: "#F3F4F6", shoeFar: "#C9CCD3", accent: "#35D68A" },
+  female: { skin: "#F2BFA4", skinFar: "#DDA186", top: "#F08AA8", topFar: "#D9709A", bottom: "#6D4FD6", bottomFar: "#5A3FB8", hair: "#3B2A2A", shoe: "#FFFFFF", shoeFar: "#DDE0EE", accent: "#FFD23F" },
+  male: { skin: "#F2BFA4", skinFar: "#DDA186", top: "#A99CF2", topFar: "#8E80E0", bottom: "#6D4FD6", bottomFar: "#5A3FB8", hair: "#3B2A2A", shoe: "#FFFFFF", shoeFar: "#DDE0EE", accent: "#6D4FD6" },
 };
+const MACHINE = { body: "#8F97B8", light: "#B3BAD4", dark: "#5E6788", base: "#E4E8F5" };
 
 /**
  * `variant`: "female" dibuja una mujer (top deportivo, leggings y coleta); "male", un hombre
@@ -190,13 +217,14 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
     return <circle cx={x} cy={y} r={r} fill={color}>{anim("cx", x, bx)}{anim("cy", y, by)}</circle>;
   };
 
-  const torsoW = female ? 21 : 25;
-  const thighW = female ? 15 : 16;
-  const shinW = female ? 11 : 12;
-  const upperArmW = female ? 8.5 : 10.5;
-  const foreArmW = female ? 7.5 : 9;
+  const torsoW = female ? 20 : 24;
+  const thighW = female ? 13 : 13;
+  const shinW = female ? 9.5 : 9.5;
+  const upperArmW = female ? 8 : 9;
+  const foreArmW = female ? 7 : 8;
   const pullBar = exercise.pattern === "vertical_pull";
   const benchKind = key === "bench_press" ? "bench" : key === "hip_extension" ? "box" : null;
+  const machine = (["bike", "treadmill", "elliptical", "rower"] as const).find((m) => m === key) ?? null;
   const shadowX = (A.hip[0] + A.ankle[0]) / 2;
 
   // Piernas: leggings completas en ella; pantaloneta y pierna descubierta en él.
@@ -227,24 +255,62 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
   return (
     <svg viewBox="0 0 200 200" width={size} height={size} className={className} role="img"
       aria-label={`Animación de referencia: ${female ? "mujer" : "hombre"} haciendo ${exercise.name}`}>
-      {/* Escenario */}
-      <ellipse cx={shadowX} cy={188} rx={46} ry={5} fill="#000" opacity={0.12} />
-      <line x1="8" y1="187" x2="192" y2="187" stroke="currentColor" strokeOpacity={0.15} strokeWidth={2} strokeLinecap="round" />
+      {/* Escenario: base suave como en la referencia */}
+      <rect x={Math.max(8, shadowX - 64)} y={183} width={128} height={9} rx={4.5} fill={MACHINE.base} />
       {pullBar && (
-        <g stroke="#6B7280" strokeLinecap="round">
-          <line x1="64" y1="12" x2="136" y2="12" strokeWidth={5} />
-          <line x1="66" y1="12" x2="66" y2="186" strokeWidth={4} opacity={0.35} />
-          <line x1="134" y1="12" x2="134" y2="186" strokeWidth={4} opacity={0.35} />
+        <g stroke={MACHINE.body} strokeLinecap="round">
+          <line x1="64" y1="12" x2="136" y2="12" strokeWidth={6} />
+          <line x1="66" y1="12" x2="66" y2="184" strokeWidth={5} opacity={0.6} />
+          <line x1="134" y1="12" x2="134" y2="184" strokeWidth={5} opacity={0.6} />
         </g>
       )}
       {benchKind === "bench" && (
-        <g fill="#6B7280">
-          <rect x={26} y={150} width={104} height={10} rx={4} />
-          <rect x={40} y={160} width={6} height={26} rx={2} opacity={0.7} />
-          <rect x={110} y={160} width={6} height={26} rx={2} opacity={0.7} />
+        <g>
+          <rect x={26} y={150} width={104} height={11} rx={5.5} fill={MACHINE.dark} />
+          <rect x={40} y={160} width={7} height={24} rx={3} fill={MACHINE.body} />
+          <rect x={110} y={160} width={7} height={24} rx={3} fill={MACHINE.body} />
         </g>
       )}
-      {benchKind === "box" && <rect x={14} y={154} width={46} height={32} rx={6} fill="#6B7280" opacity={0.85} />}
+      {benchKind === "box" && <rect x={14} y={154} width={46} height={30} rx={8} fill={MACHINE.body} />}
+      {machine === "bike" && (
+        <g>
+          {/* Cuerpo carenado con la rueda atrás, poste del sillín, manubrio alto y pedal que gira con el pie */}
+          <path d="M70 184 Q58 184 58 170 Q58 150 86 148 L136 148 Q160 150 160 170 Q160 184 146 184 Z" fill={MACHINE.body} />
+          <circle cx={132} cy={166} r={16} fill={MACHINE.dark} />
+          <circle cx={132} cy={166} r={9} fill={MACHINE.body} />
+          <path d="M70 104 L82 148" stroke={MACHINE.light} strokeWidth={6} strokeLinecap="round" />
+          <rect x={54} y={98} width={32} height={10} rx={5} fill={MACHINE.dark} />
+          <path d="M140 148 L152 92" stroke={MACHINE.light} strokeWidth={6} strokeLinecap="round" />
+          <path d="M136 92 Q152 82 166 92" stroke={MACHINE.dark} strokeWidth={6} strokeLinecap="round" fill="none" />
+          <rect x={138} y={76} width={22} height={9} rx={4.5} fill={MACHINE.dark} />
+        </g>
+      )}
+      {machine === "treadmill" && (
+        <g>
+          <rect x={44} y={176} width={120} height={8} rx={4} fill={MACHINE.dark} />
+          <path d="M150 176 L160 92" stroke={MACHINE.light} strokeWidth={6} strokeLinecap="round" />
+          <rect x={140} y={84} width={34} height={10} rx={5} fill={MACHINE.dark} />
+          <rect x={150} y={70} width={20} height={14} rx={4} fill={MACHINE.body} />
+        </g>
+      )}
+      {machine === "elliptical" && (
+        <g>
+          <rect x={46} y={176} width={110} height={8} rx={4} fill={MACHINE.dark} />
+          <path d="M140 176 L144 52" stroke={MACHINE.light} strokeWidth={6} strokeLinecap="round" />
+          <path d="M134 60 L128 100 M150 50 L152 90" stroke={MACHINE.body} strokeWidth={5} strokeLinecap="round" />
+          <rect x={120} y={158} width={26} height={8} rx={4} fill={MACHINE.body} />
+          <rect x={72} y={160} width={26} height={8} rx={4} fill={MACHINE.body} />
+        </g>
+      )}
+      {machine === "rower" && (
+        <g>
+          <rect x={40} y={162} width={132} height={9} rx={4.5} fill={MACHINE.dark} />
+          <rect x={56} y={150} width={38} height={12} rx={6} fill={MACHINE.body} />
+          <circle cx={166} cy={146} r={16} fill={MACHINE.body} />
+          <circle cx={166} cy={146} r={8} fill={MACHINE.dark} />
+          <rect x={140} y={158} width={14} height={6} rx={3} fill={MACHINE.light} />
+        </g>
+      )}
 
       {/* Lado lejano */}
       {leg(true)}
@@ -278,22 +344,34 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
               values={`${A.headAngle};${B.headAngle};${A.headAngle}`} keyTimes="0;0.5;1" calcMode="spline" keySplines={KEY_SPLINES} />
           )}
           {female && <path d="M-9 -7 Q-24 -6 -23 12 Q-19 5 -10 2 Z" fill={c.hair} />}
-          <circle r={11.5} fill={c.skin} />
+          {/* Cabeza ovalada con mentón hacia el frente, como en la referencia */}
+          <path d="M-10 -4 Q-11 -13 0 -13 Q12 -13 12 -1 Q12 8 8 11 Q3 14 -3 12 Q-10 9 -10 -4 Z" fill={c.skin} />
           {female ? (
             <>
-              <path d="M-11.5 1 Q-13 -13 1 -13 Q11 -12.5 11.5 -3 Q4 -8 -3 -7 Q-8 -4 -11.5 1 Z" fill={c.hair} />
+              <path d="M-10.5 1 Q-12 -13 1 -13 Q11 -12.5 11.5 -3 Q4 -8 -3 -7 Q-8 -4 -10.5 1 Z" fill={c.hair} />
               <circle cx={-10.5} cy={-5} r={2.6} fill={c.accent} />
             </>
           ) : (
-            <path d="M-11.5 0 Q-12.5 -14 1 -13.5 Q11.5 -12.5 11.5 -4 Q2 -8.5 -11.5 0 Z" fill={c.hair} />
+            <path d="M-10.5 2 Q-12 -14 2 -13.5 Q12 -12 12 -2 Q8 -6 3 -5.5 Q-2 -8 -6 -4 Q-9 -1 -10.5 2 Z" fill={c.hair} />
           )}
-          <circle cx={-2} cy={1} r={2.6} fill={c.skinFar} />
-          <circle cx={6.5} cy={-1.5} r={1.4} fill="#1B1512" />
-          <path d="M5 5 Q7.5 6.5 9.5 5" fill="none" stroke="#9A5B47" strokeWidth={1.2} strokeLinecap="round" />
+          <circle cx={7.5} cy={1} r={1.2} fill="#3B2A2A" opacity={0.7} />
         </g>
       </g>
 
       {arm(false)}
+
+      {machine === "bike" && (
+        <g transform={`translate(${A.toe.join(" ")})`} opacity={0.9}>
+          {moveTo(A.toe as P, B.toe as P)}
+          <rect x={-9} y={1} width={18} height={5} rx={2.5} fill={MACHINE.dark} />
+        </g>
+      )}
+      {machine === "rower" && (
+        <g transform={`translate(${A.wrist.join(" ")})`}>
+          {moveTo(A.wrist as P, B.wrist as P)}
+          <rect x={-3} y={-9} width={6} height={18} rx={3} fill={MACHINE.dark} />
+        </g>
+      )}
 
       {/* Equipo en la mano cercana */}
       {kind && (
@@ -301,22 +379,22 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
           {moveTo(A.wrist as P, B.wrist as P)}
           {kind === "barbell" && (
             <g>
-              <circle r={15} fill="#374151" />
-              <circle r={10} fill="none" stroke="#6B7280" strokeWidth={2} />
-              <circle r={3} fill="#D1D5DB" />
+              <circle r={15} fill={MACHINE.dark} />
+              <circle r={10} fill="none" stroke={MACHINE.body} strokeWidth={2} />
+              <circle r={3} fill={MACHINE.light} />
             </g>
           )}
           {kind === "dumbbells" && (
             <g>
-              <rect x={-9} y={-3} width={18} height={6} rx={2} fill="#9CA3AF" />
-              <rect x={-11} y={-7} width={6} height={14} rx={2} fill="#374151" />
-              <rect x={5} y={-7} width={6} height={14} rx={2} fill="#374151" />
+              <rect x={-9} y={-3} width={18} height={6} rx={2} fill={MACHINE.light} />
+              <rect x={-11} y={-7} width={6} height={14} rx={2} fill={MACHINE.dark} />
+              <rect x={5} y={-7} width={6} height={14} rx={2} fill={MACHINE.dark} />
             </g>
           )}
           {kind === "kettlebells" && (
             <g>
-              <path d="M-5 0 Q0 -8 5 0" fill="none" stroke="#374151" strokeWidth={3} />
-              <circle cy={8} r={8} fill="#374151" />
+              <path d="M-5 0 Q0 -8 5 0" fill="none" stroke={MACHINE.dark} strokeWidth={3} />
+              <circle cy={8} r={8} fill={MACHINE.dark} />
             </g>
           )}
         </g>
