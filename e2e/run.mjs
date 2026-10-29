@@ -95,15 +95,18 @@ async function onboarding(page, p) {
   for (const a of p.allergens ?? []) await page.getByRole("button", { name: a, exact: true }).click();
   await next(page);
   await next(page); // composición corporal (opcional)
-  if (p.cycle) {
-    await page.getByRole("button", { name: /Sí, quiero activarlo/ }).click();
-    await page.getByLabel("Primer día de tu último periodo").fill(p.cycle.lastPeriod);
-    await page.getByLabel("Regularidad").selectOption(p.cycle.regularity);
-    await page.getByRole("button", { name: "Cólicos", exact: true }).click();
-  } else {
-    await page.getByRole("button", { name: /No, gracias/ }).click();
+  // El paso del ciclo menstrual solo aparece para mujeres.
+  if (p.sex === "female") {
+    if (p.cycle) {
+      await page.getByRole("button", { name: /Sí, quiero activarlo/ }).click();
+      await page.getByLabel("Primer día de tu último periodo").fill(p.cycle.lastPeriod);
+      await page.getByLabel("Regularidad").selectOption(p.cycle.regularity);
+      await page.getByRole("button", { name: "Cólicos", exact: true }).click();
+    } else {
+      await page.getByRole("button", { name: /No, gracias/ }).click();
+    }
+    await next(page);
   }
-  await next(page);
   await page.getByText("Revisa tus respuestas").waitFor();
   await page.getByRole("button", { name: /Crear mi plan/ }).click();
   await page.getByRole("heading", { name: new RegExp(`Hola, ${p.name}`) }).waitFor({ timeout: 15000 });
@@ -136,6 +139,8 @@ await test("validación del registro y del onboarding", async () => {
   await next(page);
   await page.getByText("Indica tu fecha de nacimiento.").waitFor();
   await page.getByText("Estatura entre 100 y 250 cm.").waitFor();
+  await page.getByText(/Elige mujer u hombre/).waitFor();
+  await page.getByLabel("Sexo biológico").selectOption("female");
   // Onboarding incompleto: tras completar el paso 1 y recargar, se retoma en el paso 2.
   await page.getByLabel("Fecha de nacimiento").fill("1995-05-05");
   await page.getByLabel("Estatura (cm)").fill("170");
@@ -306,6 +311,10 @@ await test("intermedio en gimnasio con limitación de rodilla y sin ciclo (escri
     level: "Intermedio", days: 4, minutes: 60, environment: "Gimnasio comercial", limitations: ["Rodilla"],
   });
   assert(!(await page.getByRole("link", { name: "Ciclo" }).count()), "la navegación muestra Ciclo sin activarlo");
+  await page.goto(`${BASE}/settings`);
+  await page.getByText("Funciones opcionales y privacidad del coach").waitFor();
+  assert(!(await page.getByText("Cycle Wellness", { exact: true }).count()), "un hombre ve la opción de Cycle Wellness");
+  assert(!(await page.getByLabel("Embarazo o posparto").count()), "un hombre ve la pregunta de embarazo");
   await page.goto(`${BASE}/cycle`);
   await page.getByText("Cycle Wellness está desactivado").waitFor();
   await page.goto(`${BASE}/workouts`);
@@ -331,6 +340,9 @@ await test("intermedio en gimnasio con limitación de rodilla y sin ciclo (escri
   await page.getByText("Horario guardado").waitFor();
   assert((await page.getByText("7:00 a. m.").count()) >= 4, "la hora nueva no se aplicó a todos los días");
 
+  await page.getByRole("button", { name: "Cómo se hace" }).first().click();
+  await page.getByRole("img", { name: /Animación de referencia: hombre/ }).first().waitFor();
+
   // Gym Bro: horario de comidas y suplementos.
   await page.goto(`${BASE}/nutrition`);
   await page.getByRole("tab", { name: "Horario y déficit" }).click();
@@ -353,6 +365,7 @@ await test("pérdida de grasa con antecedentes de TCA: sin cifras de calorías n
   await page.getByLabel("Fecha de nacimiento").fill("1992-01-20");
   await page.getByLabel("Estatura (cm)").fill("165");
   await page.getByLabel("Peso actual (kg)").fill("80");
+  await page.getByLabel("Sexo biológico").selectOption("female");
   await next(page);
   await page.getByRole("button", { name: "Perder grasa corporal", exact: true }).click();
   await next(page);
@@ -396,6 +409,53 @@ await test("borrar una sesión con confirmación dentro de la página", async ()
   await page.getByRole("button", { name: "Borrar sesión" }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Borrar sesión" }).click();
   await page.getByText("Sesión borrada").waitFor();
+});
+
+await test("entrenos: mover días, crear rutina, añadir por músculo, reordenar y ver cómo se hace", async () => {
+  const { page } = mar;
+  await page.goto(`${BASE}/workouts`);
+  await page.getByText("Tu semana de entrenamiento").waitFor();
+  // Guía visual con figura de mujer.
+  await page.getByRole("button", { name: "Cómo se hace" }).first().click();
+  await page.getByRole("img", { name: /Animación de referencia: mujer/ }).first().waitFor();
+  // Mover la rutina seleccionada a otro día (intercambia si está ocupado).
+  const moveSelect = page.getByLabel("Mover a");
+  const current = await moveSelect.inputValue();
+  await moveSelect.selectOption(current === "6" ? "5" : "6");
+  await page.getByText("Rutina movida").waitFor();
+  // Crear una rutina de glúteos y femoral en un día de descanso.
+  await page.getByRole("button", { name: /^Agregar rutina el/ }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Femoral", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Crear rutina" }).click();
+  await page.getByText(/Glúteos y Femoral agregado el/).waitFor();
+  assert((await page.getByRole("button", { name: /^Mover .* a otro día$/ }).count()) === 4, "la nueva rutina no aparece en la semana");
+  // Añadir ejercicios filtrando por músculo, sin cerrar el selector.
+  await page.getByRole("button", { name: "Añadir ejercicio" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Pierna", exact: true }).click();
+  await dialog.locator("ul button").first().click();
+  await dialog.getByText("Añadido ✓").waitFor();
+  await dialog.getByRole("button", { name: /Cerrar/ }).click();
+  // Reordenar ejercicios con el teclado (arrastrar accesible).
+  const names = async () => page.locator("ol li a[href^='/exercises/']").allInnerTexts();
+  const before = await names();
+  assert(before[0] !== before[1], "los dos primeros ejercicios son iguales");
+  const handle = page.locator("li:has(a[href^='/exercises/']) button[aria-label^='Mover ']").first();
+  await handle.focus();
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(250);
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(250);
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(500);
+  const after = await names();
+  assert(after[1] === before[0] && after[0] === before[1], `el orden no cambió: ${before.slice(0, 2)} → ${after.slice(0, 2)}`);
+  await noHorizontalScroll(page, "entrenos editables");
+  await page.screenshot({ path: `${SHOTS}14-workouts-edit.png`, fullPage: true });
+  // Detalle del ejercicio con animación.
+  await page.locator("ol li a[href^='/exercises/']").first().click();
+  await page.getByText("Así se hace").waitFor();
+  await page.getByRole("img", { name: /Animación de referencia: mujer/ }).waitFor();
 });
 
 await test("borrar datos de ciclo y borrar cuenta", async () => {

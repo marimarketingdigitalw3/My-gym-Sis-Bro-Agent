@@ -106,14 +106,18 @@ function ProfileSection() {
         <Field label="País" htmlFor="p-c"><Input id="p-c" value={f.country} maxLength={60} onChange={(e) => setF({ ...f, country: e.target.value })} /></Field>
         <Field label="Unidades" htmlFor="p-u"><Select id="p-u" value={f.units} onChange={(e) => setF({ ...f, units: e.target.value as Units })}><option value="metric">Métricas (kg)</option><option value="imperial">Imperiales (lb)</option></Select></Field>
         <Field label="Idioma del coach" htmlFor="p-l"><Select id="p-l" value={f.language} onChange={(e) => setF({ ...f, language: e.target.value as "es" | "en" })}><option value="es">Español</option><option value="en">English</option></Select></Field>
-        <Field label="Sexo biológico" optional htmlFor="p-s"><Select id="p-s" value={f.sex} onChange={(e) => setF({ ...f, sex: e.target.value as BiologicalSex | "" })}><option value="">Prefiero no decirlo</option><option value="female">Femenino</option><option value="male">Masculino</option></Select></Field>
+        <Field label="Sexo biológico" htmlFor="p-s"><Select id="p-s" value={f.sex} onChange={(e) => setF({ ...f, sex: e.target.value as BiologicalSex | "" })}><option value="" disabled>Selecciona</option><option value="female">Mujer</option><option value="male">Hombre</option></Select></Field>
         <Field label="Identidad de género" optional htmlFor="p-g"><Input id="p-g" maxLength={50} value={f.gender_identity} onChange={(e) => setF({ ...f, gender_identity: e.target.value })} /></Field>
       </div>
-      <Button className="mt-4" disabled={!valid} loading={saving} onClick={() => run(() => updateProfile({
-        display_name: f.display_name.trim(), birth_date: f.birth_date, height_cm: Number(f.height_cm), weight_kg: Number(f.weight_kg),
-        target_weight_kg: f.target_weight_kg ? Number(f.target_weight_kg) : null, country: f.country.trim() || null, units: f.units, language: f.language,
-        sex: f.sex || null, gender_identity: f.gender_identity.trim() || null,
-      }))}>Guardar datos</Button>
+      <Button className="mt-4" disabled={!valid} loading={saving} onClick={() => run(async () => {
+        await updateProfile({
+          display_name: f.display_name.trim(), birth_date: f.birth_date, height_cm: Number(f.height_cm), weight_kg: Number(f.weight_kg),
+          target_weight_kg: f.target_weight_kg ? Number(f.target_weight_kg) : null, country: f.country.trim() || null, units: f.units, language: f.language,
+          sex: f.sex || null, gender_identity: f.gender_identity.trim() || null,
+        });
+        // El seguimiento del ciclo solo aplica a mujeres.
+        if (f.sex !== "female") await updateSettings({ cycle_tracking_enabled: false });
+      })}>Guardar datos</Button>
     </Section>
   );
 }
@@ -206,11 +210,13 @@ function HealthSection() {
         <Toggle label="Restricción médica de actividad" checked={!!h.medicalRestriction} onChange={(v) => setH({ ...h, medicalRestriction: v })} />
         <Toggle label="Siento dolor al entrenar" checked={!!h.painDuringExercise} onChange={(v) => setH({ ...h, painDuringExercise: v })} />
       </div>
-      <Field label="Embarazo o posparto" htmlFor="h-preg">
-        <Select id="h-preg" value={h.pregnancyStatus ?? "none"} onChange={(e) => setH({ ...h, pregnancyStatus: e.target.value as HealthAnswers["pregnancyStatus"] })}>
-          <option value="none">No aplica</option><option value="pregnant">Embarazo</option><option value="postpartum">Posparto</option><option value="prefer_not">Prefiero no decirlo</option>
-        </Select>
-      </Field>
+      {bundle.profile.sex === "female" && (
+        <Field label="Embarazo o posparto" htmlFor="h-preg">
+          <Select id="h-preg" value={h.pregnancyStatus ?? "none"} onChange={(e) => setH({ ...h, pregnancyStatus: e.target.value as HealthAnswers["pregnancyStatus"] })}>
+            <option value="none">No aplica</option><option value="pregnant">Embarazo</option><option value="postpartum">Posparto</option><option value="prefer_not">Prefiero no decirlo</option>
+          </Select>
+        </Field>
+      )}
       <p className="mb-2 mt-4 text-sm font-medium">Síntomas de alarma reportados</p>
       <div className="space-y-1.5 text-sm">
         {RED_FLAGS.map((f) => (
@@ -273,13 +279,15 @@ function NutritionSection() {
 }
 
 function FeaturesSection() {
-  const { settings } = useBundle();
+  const { settings, profile } = useBundle();
   const { run } = useSaver();
   return (
     <Section id="funciones" title="Funciones opcionales y privacidad del coach">
       <div className="divide-y divide-border">
-        <Toggle label="Cycle Wellness" description="Registro opcional del ciclo y síntomas. Puedes desactivarlo cuando quieras." checked={settings.cycle_tracking_enabled}
-          onChange={(v) => run(() => updateSettings({ cycle_tracking_enabled: v }), v ? "Cycle Wellness activado" : "Cycle Wellness desactivado")} />
+        {profile.sex === "female" && (
+          <Toggle label="Cycle Wellness" description="Registro opcional del ciclo y síntomas. Puedes desactivarlo cuando quieras." checked={settings.cycle_tracking_enabled}
+            onChange={(v) => run(() => updateSettings({ cycle_tracking_enabled: v }), v ? "Cycle Wellness activado" : "Cycle Wellness desactivado")} />
+        )}
         <Toggle label="Registro de agua" checked={settings.water_tracking_enabled} onChange={(v) => run(() => updateSettings({ water_tracking_enabled: v }))} />
         <Toggle label="Mostrar cifras de calorías y macros" description="Si prefieres no ver números, mostramos guías generales." checked={settings.calorie_tracking_enabled}
           onChange={(v) => run(() => updateSettings({ calorie_tracking_enabled: v }))} />

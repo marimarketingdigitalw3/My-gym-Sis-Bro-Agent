@@ -2,6 +2,8 @@ import { ArrowLeft, Info } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useBundle } from "@/app/providers";
 import { MuscleMap } from "@/components/MuscleMap";
+import { ExerciseDemo } from "@/components/ExerciseDemo";
+import { useDemoVariant } from "@/components/ExerciseGuide";
 import { Badge, Button, Card, CardHeader, EmptyState, Notice } from "@/components/ui";
 import { EXERCISE_BY_ID } from "@/data/exercises";
 import { CATEGORY_LABELS, DIFFICULTY_LABELS, EQUIPMENT_LABELS, JOINT_LABELS, MUSCLE_LABELS, PATTERN_LABELS } from "@/lib/labels";
@@ -13,6 +15,7 @@ export default function ExerciseDetailPage() {
   const navigate = useNavigate();
   const bundle = useBundle();
   const ex = EXERCISE_BY_ID[id];
+  const variant = useDemoVariant();
   if (!ex) return <EmptyState title="Ejercicio no encontrado" action={<Link to="/exercises"><Button variant="outline">Volver a la biblioteca</Button></Link>} />;
 
   const ctx = selectionContextFromBundle(bundle);
@@ -45,6 +48,17 @@ export default function ExerciseDetailPage() {
           <p className="mt-3 text-sm"><strong>Principales:</strong> {ex.primaryMuscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>
           {ex.secondaryMuscles.length > 0 && <p className="text-sm text-muted"><strong className="text-text">Secundarios:</strong> {ex.secondaryMuscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>}
           <p className="mt-2 text-sm text-muted"><strong className="text-text">Equipo:</strong> {ex.equipment.map((e) => EQUIPMENT_LABELS[e]).join(", ")}</p>
+        </Card>
+        <Card className="lg:col-span-2">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+            <div className="shrink-0 rounded-3xl bg-surface-2/70 p-3">
+              <ExerciseDemo exercise={ex} variant={variant} size={200} />
+            </div>
+            <div className="min-w-0">
+              <CardHeader title="Así se hace" subtitle="Animación de referencia del movimiento." />
+              <ol className="list-decimal space-y-2 pl-5 text-[15px]">{ex.instructions.map((s) => <li key={s}>{s}</li>)}</ol>
+            </div>
+          </div>
         </Card>
         <Card>
           <CardHeader title="Técnica paso a paso" />
