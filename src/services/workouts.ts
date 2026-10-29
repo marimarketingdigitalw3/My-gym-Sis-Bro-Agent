@@ -37,7 +37,7 @@ export async function regeneratePlan(input: Parameters<typeof generatePlan>[0]):
 }
 
 export async function updatePlanSchedule(planId: string, schedule: WorkoutPlanRow["schedule"]) {
-  const [row] = await db.update("workout_plans", { id: planId }, { schedule });
+  const [row] = await db.update("workout_plans", { id: planId }, { schedule, days_per_week: Math.max(1, schedule.length) });
   return row;
 }
 

@@ -7,6 +7,7 @@ import { useBundle } from "@/app/providers";
 import {
   Badge, Button, Card, Chip, ErrorState, Field, IconButton, Input, Modal, Notice, PageSkeleton, ProgressBar, Select, Textarea, cx, useConfirm,
 } from "@/components/ui";
+import { ExerciseGuide } from "@/components/ExerciseGuide";
 import { useToast } from "@/components/ui/toast";
 import { EXERCISE_BY_ID } from "@/data/exercises";
 import { trainingClearance } from "@/lib/clearance";
@@ -214,6 +215,11 @@ export default function SessionPage() {
             {row.target_rpe && <Badge>Esfuerzo objetivo {row.target_rpe}/10</Badge>}
             {ui.swaps[row.id] && <Badge tone="warning">Sustituido hoy</Badge>}
           </div>
+
+          <details className="mt-4 rounded-3xl border border-border/60 p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-primary-strong">Ver cómo se hace</summary>
+            <div className="mt-3"><ExerciseGuide exerciseId={exerciseId} compact /></div>
+          </details>
 
           <div className="mt-4 rounded-3xl bg-surface-2/70 p-3 text-sm">
             <p className="font-semibold">La última vez</p>

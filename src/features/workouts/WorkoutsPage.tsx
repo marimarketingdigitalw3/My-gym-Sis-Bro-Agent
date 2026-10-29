@@ -1,9 +1,14 @@
-import { Clock, Info, Moon, Pencil, Play, Plus, RefreshCw, Repeat, Trash2 } from "lucide-react";
+import {
+  closestCenter, DndContext, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { CalendarPlus, ChevronDown, Clock, GripVertical, Info, Moon, Pencil, Play, Plus, RefreshCw, Repeat, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useBundle, useUserData } from "@/app/providers";
 import {
-  Badge, Button, Card, CardHeader, cx, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Tabs, useConfirm,
+  Badge, Button, Card, CardHeader, Chip, cx, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, PageHeader, PageSkeleton, Select, Tabs, useConfirm,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { EXERCISE_BY_ID } from "@/data/exercises";
@@ -21,6 +26,9 @@ import {
 } from "@/services/workouts";
 import type { WorkoutExerciseRow } from "@/types/db";
 import { ExercisePicker } from "./ExercisePicker";
+import { ExerciseGuide } from "@/components/ExerciseGuide";
+import { applyWeekOrder, FOCUS_GROUPS, moveDay, newDayMeta, suggestExercises } from "@/lib/workouts/focus";
+import type { WorkoutDayMeta } from "@/types/db";
 
 export default function WorkoutsPage() {
   const [tab, setTab] = useState<"plan" | "history">("plan");
@@ -51,6 +59,15 @@ function PlanView() {
   const [regenOpen, setRegenOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
+  const [addDayFor, setAddDayFor] = useState<number | null>(null);
+  const [addedNow, setAddedNow] = useState<string[]>([]);
+  const [openGuide, setOpenGuide] = useState<string | null>(null);
+  const [ask, confirmDialog] = useConfirm();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const ctx = useMemo(() => selectionContextFromBundle(bundle), [bundle]);
 
   if (loading && !data) return <PageSkeleton />;
@@ -90,8 +107,75 @@ function PlanView() {
     }
   }
 
+  async function saveSchedule(next: WorkoutDayMeta[], message?: string) {
+    const prev = schedule;
+    setData((x) => x && x.active ? { ...x, active: { ...x.active, plan: { ...x.active.plan, schedule: next, days_per_week: next.length } } } : x);
+    try {
+      await updatePlanSchedule(active!.plan.id, next);
+      if (message) toast(message);
+    } catch (e) {
+      setData((x) => x && x.active ? { ...x, active: { ...x.active, plan: { ...x.active.plan, schedule: prev } } } : x);
+      toast(errorMessage(e), "error");
+    }
+  }
+
+  // Arrastrar una rutina a otro día de la semana.
+  const weekOrder: (number | null)[] = WEEKDAYS.map((_, wd) => schedule.find((d) => d.weekday === wd)?.dayIndex ?? null);
+  const weekIds = weekOrder.map((di, wd) => (di === null ? `rest-${wd}` : `day-${di}`));
+  function onWeekDragEnd(ev: DragEndEvent) {
+    if (!ev.over || ev.active.id === ev.over.id) return;
+    const from = weekIds.indexOf(String(ev.active.id));
+    const to = weekIds.indexOf(String(ev.over.id));
+    const order = arrayMove(weekOrder, from, to);
+    void saveSchedule(applyWeekOrder(schedule, order), "Semana reorganizada");
+  }
+
+  // Arrastrar ejercicios dentro del día.
+  async function onExerciseDragEnd(ev: DragEndEvent) {
+    if (!ev.over || ev.active.id === ev.over.id) return;
+    const ids = exercises.map((e) => e.id);
+    const ordered = arrayMove(exercises, ids.indexOf(String(ev.active.id)), ids.indexOf(String(ev.over.id)));
+    const changed = ordered.map((e, i) => ({ ...e, position: i })).filter((_, i) => ordered[i].position !== i);
+    setData((d) => d && d.active ? { ...d, active: { ...d.active, exercises: d.active.exercises.map((e) => changed.find((c) => c.id === e.id) ?? e) } } : d);
+    try {
+      await Promise.all(changed.map((e) => updatePlanExercise(e.id, { position: e.position })));
+    } catch (e) { toast(errorMessage(e), "error"); await reload(); }
+  }
+
+  async function removeDay(m: WorkoutDayMeta) {
+    if (schedule.length <= 1) return toast("Tu plan necesita al menos un día de entrenamiento.", "error");
+    if (!(await ask(`¿Quitar ${m.title}? El ${WEEKDAYS[m.weekday].toLowerCase()} quedará como descanso y se quitarán sus ejercicios.`, "Quitar día"))) return;
+    try {
+      await Promise.all(active!.exercises.filter((e) => e.day_index === m.dayIndex).map((e) => removePlanExercise(e.id)));
+      setData((d) => d && d.active ? { ...d, active: { ...d.active, exercises: d.active.exercises.filter((e) => e.day_index !== m.dayIndex) } } : d);
+      await saveSchedule(schedule.filter((d) => d.dayIndex !== m.dayIndex), "Día quitado");
+      setDay(null);
+    } catch (e) { toast(errorMessage(e), "error"); }
+  }
+
+  async function createDay(weekday: number, title: string, keys: string[], withSuggestions: boolean) {
+    const meta2 = newDayMeta(schedule, weekday, title, keys, active!.plan.session_minutes + 10,
+      ["5 minutos de cardio suave (caminar, bicicleta o marcha en el sitio)", "Movilidad articular de pies a cabeza", "1 o 2 series de aproximación ligeras del primer ejercicio"],
+      ["Camina 2 a 3 minutos hasta normalizar la respiración", "Estira los músculos trabajados de 30 a 60 segundos"]);
+    const next = [...schedule, meta2].sort((a, b) => a.weekday - b.weekday);
+    try {
+      await updatePlanSchedule(active!.plan.id, next);
+      const picks = withSuggestions ? suggestExercises(keys, ctx, 5) : [];
+      const created = await Promise.all(picks.map((ex, i) => addPlanExercise({
+        plan_id: active!.plan.id, day_index: meta2.dayIndex, position: i, exercise_id: ex.id, sets: 3,
+        rep_min: ex.defaultUnit === "reps" ? 10 : null, rep_max: ex.defaultUnit === "reps" ? 12 : null,
+        duration_s: ex.defaultUnit === "seconds" ? 30 : null, rest_s: 75, target_rpe: 7, load_kg: null, notes: null,
+      })));
+      setData((d) => d && d.active ? { ...d, active: { ...d.active, plan: { ...d.active.plan, schedule: next, days_per_week: next.length }, exercises: [...d.active.exercises, ...created] } } : d);
+      setDay(meta2.dayIndex);
+      setAddDayFor(null);
+      toast(`${meta2.title} agregado el ${WEEKDAYS[weekday].toLowerCase()}`);
+    } catch (e) { toast(errorMessage(e), "error"); }
+  }
+
   return (
     <div className="space-y-5">
+      {confirmDialog}
       {clearance.status === "blocked" && <Notice tone="danger" title="Entrenamiento en pausa">{clearance.reasons[0]} Busca evaluación médica antes de seguir.</Notice>}
 
       <Card>
@@ -103,43 +187,26 @@ function PlanView() {
         </details>
       </Card>
 
-      {/* Agenda semanal: cada día con su rutina y su horario */}
+      {/* Agenda semanal: arrastra las rutinas para cambiarlas de día */}
       <Card className="p-3 sm:p-4">
-        <p className="px-2 pb-2 pt-1 text-sm font-semibold">Tu semana de entrenamiento</p>
-        <ol className="space-y-1.5" aria-label="Días del plan">
-          {WEEKDAYS.map((name, wd) => {
-            const d = schedule.find((x) => x.weekday === wd);
-            const date = addDays(startOfWeek(todayISO()), wd);
-            const isToday = wd === todayIdx;
-            if (!d) {
-              return (
-                <li key={name} className={cx("flex items-center gap-3 rounded-3xl px-3 py-2.5 text-sm text-muted", isToday && "bg-surface-2/70")}>
-                  <DayBadge name={name} date={date} today={isToday} />
-                  <span className="flex items-center gap-1.5"><Moon className="h-4 w-4" aria-hidden /> Descanso</span>
-                </li>
-              );
-            }
-            const start = dayStartTime(d, preferredTime);
-            const sel = selected === d.dayIndex;
-            return (
-              <li key={name}>
-                <button type="button" onClick={() => setDay(d.dayIndex)} aria-pressed={sel}
-                  className={cx("flex w-full items-center gap-3 rounded-3xl border px-3 py-2.5 text-left transition",
-                    sel ? "border-primary-strong/40 bg-primary-strong/10" : "border-transparent hover:bg-surface-2/70")}>
-                  <DayBadge name={name} date={date} today={isToday} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{d.title}{isToday ? " (hoy)" : ""}</span>
-                    <span className="block truncate text-xs text-muted">{d.focus}</span>
-                  </span>
-                  <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
-                    {formatTime(start)}
-                    <span className="block font-normal text-muted">{d.estimatedMinutes} min</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+        <div className="flex items-baseline justify-between gap-2 px-2 pb-2 pt-1">
+          <p className="text-sm font-semibold">Tu semana de entrenamiento</p>
+          <p className="text-xs text-muted">Arrastra <GripVertical className="inline h-3.5 w-3.5 align-[-2px]" aria-hidden /> para cambiar el día</p>
+        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onWeekDragEnd}>
+          <SortableContext items={weekIds} strategy={verticalListSortingStrategy}>
+            <ol className="space-y-1.5" aria-label="Días del plan">
+              {WEEKDAYS.map((name, wd) => {
+                const d = schedule.find((x) => x.weekday === wd) ?? null;
+                return (
+                  <WeekRow key={weekIds[wd]} id={weekIds[wd]} name={name} date={addDays(startOfWeek(todayISO()), wd)} today={wd === todayIdx}
+                    day={d} selected={!!d && selected === d.dayIndex} start={d ? dayStartTime(d, preferredTime) : null}
+                    onSelect={() => d && setDay(d.dayIndex)} onAdd={() => setAddDayFor(wd)} />
+                );
+              })}
+            </ol>
+          </SortableContext>
+        </DndContext>
       </Card>
 
       {meta && (
@@ -158,43 +225,37 @@ function PlanView() {
             </div>
             <Button onClick={start} loading={busy} disabled={clearance.status === "blocked" || exercises.length === 0}><Play className="h-4 w-4" /> Empezar sesión</Button>
           </div>
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <Field label="Mover a" htmlFor="move-day">
+              <Select id="move-day" value={meta.weekday} onChange={(e) => void saveSchedule(moveDay(schedule, meta.dayIndex, Number(e.target.value)), "Rutina movida")}>
+                {WEEKDAYS.map((n, i) => <option key={n} value={i}>{n}{schedule.some((d) => d.weekday === i && d.dayIndex !== meta.dayIndex) ? " (intercambiar)" : ""}</option>)}
+              </Select>
+            </Field>
+            <Button variant="ghost" size="sm" onClick={() => removeDay(meta)}><Trash2 className="h-4 w-4" /> Quitar día</Button>
+          </div>
 
           <div className="mt-4 rounded-3xl bg-surface-2/70 p-3.5 text-sm">
             <p className="font-semibold">Calentamiento</p>
             <ul className="mt-1 list-disc pl-5 text-muted">{meta.warmup.map((w) => <li key={w}>{w}</li>)}</ul>
           </div>
 
-          <ol className="mt-4 space-y-3">
-            {exercises.map((e, i) => {
-              const ex = EXERCISE_BY_ID[e.exercise_id];
-              return (
-                <li key={e.id} className="rounded-3xl border border-border/60 bg-surface-2/40 p-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-muted">{i + 1}</p>
-                      <Link to={`/exercises/${e.exercise_id}`} className="font-semibold hover:text-primary-strong">{ex?.name ?? e.exercise_id}</Link>
-                      <p className="text-xs text-muted">{ex?.primaryMuscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>
-                    </div>
-                    <div className="flex shrink-0">
-                      <IconButton label={`Sustituir ${ex?.name}`} onClick={() => setSwapping(e)}><Repeat className="h-4 w-4" /></IconButton>
-                      <IconButton label={`Editar ${ex?.name}`} onClick={() => setEditing(e)}><Pencil className="h-4 w-4" /></IconButton>
-                      <IconButton label={`Quitar ${ex?.name}`} onClick={async () => {
-                        try { await removePlanExercise(e.id); patchLocal(e.id, null); toast("Ejercicio quitado"); } catch (err) { toast(errorMessage(err), "error"); }
-                      }}><Trash2 className="h-4 w-4" /></IconButton>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Badge tone="primary">{e.sets} × {e.rep_min ? `${e.rep_min}${e.rep_max && e.rep_max !== e.rep_min ? `–${e.rep_max}` : ""} reps` : formatDuration(e.duration_s ?? 0)}</Badge>
-                    {e.rest_s > 0 && <Badge>Descanso {formatDuration(e.rest_s)}</Badge>}
-                    {e.target_rpe && <Badge>Esfuerzo {e.target_rpe}/10</Badge>}
-                    {e.load_kg ? <Badge>{e.load_kg} kg</Badge> : null}
-                  </div>
-                  {e.notes && <p className="mt-2 text-sm text-muted">{e.notes}</p>}
-                </li>
-              );
-            })}
-          </ol>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Añadir ejercicio</Button>
+          <p className="mt-4 text-xs text-muted">Arrastra <GripVertical className="inline h-3.5 w-3.5 align-[-2px]" aria-hidden /> para cambiar el orden de los ejercicios.</p>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onExerciseDragEnd}>
+            <SortableContext items={exercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+              <ol className="mt-2 space-y-3">
+                {exercises.map((e, i) => (
+                  <ExerciseRow key={e.id} row={e} index={i} guideOpen={openGuide === e.id}
+                    onToggleGuide={() => setOpenGuide(openGuide === e.id ? null : e.id)}
+                    onSwap={() => setSwapping(e)} onEdit={() => setEditing(e)}
+                    onRemove={async () => {
+                      try { await removePlanExercise(e.id); patchLocal(e.id, null); toast("Ejercicio quitado"); } catch (err) { toast(errorMessage(err), "error"); }
+                    }} />
+                ))}
+              </ol>
+            </SortableContext>
+          </DndContext>
+          {exercises.length === 0 && <p className="mt-2 rounded-3xl bg-surface-2/70 p-4 text-sm text-muted">Este día aún no tiene ejercicios. Añade los que quieras.</p>}
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => { setAddedNow([]); setAdding(true); }}><Plus className="h-4 w-4" /> Añadir ejercicio</Button>
 
           <div className="mt-4 rounded-3xl bg-surface-2/70 p-3.5 text-sm">
             <p className="font-semibold">Vuelta a la calma</p>
@@ -246,18 +307,23 @@ function PlanView() {
         }}
       />
 
-      <ExercisePicker open={adding} onClose={() => setAdding(false)} title="Añadir ejercicio" ctx={ctx} onPick={async (ex) => {
+      <ExercisePicker open={adding} onClose={() => setAdding(false)} title={`Añadir ejercicios${meta ? ` a ${meta.title}` : ""}`} ctx={ctx} added={addedNow}
+        description="Filtra por músculo (pierna, femoral, glúteos...) y añade los que quieras. Cierra cuando termines." onPick={async (ex) => {
         try {
           const created = await addPlanExercise({
-            plan_id: active.plan.id, day_index: selected, position: exercises.length, exercise_id: ex.id, sets: 3,
+            plan_id: active.plan.id, day_index: selected, position: exercises.length + addedNow.length, exercise_id: ex.id, sets: 3,
             rep_min: ex.defaultUnit === "reps" ? 10 : null, rep_max: ex.defaultUnit === "reps" ? 12 : null,
             duration_s: ex.defaultUnit === "seconds" ? 30 : null, rest_s: 60, target_rpe: 7, load_kg: null, notes: null,
           });
           setData((d) => d && d.active ? { ...d, active: { ...d.active, exercises: [...d.active.exercises, created] } } : d);
+          setAddedNow((l) => [...l, ex.id]);
           toast(`${ex.name} añadido`);
         } catch (e) { toast(errorMessage(e), "error"); }
-        setAdding(false);
       }} />
+
+      {addDayFor !== null && (
+        <AddDayModal weekday={addDayFor} onClose={() => setAddDayFor(null)} onCreate={(title, keys, suggest) => createDay(addDayFor, title, keys, suggest)} />
+      )}
 
       <RegenerateModal open={regenOpen} onClose={() => setRegenOpen(false)} onDone={async () => { setRegenOpen(false); await refresh(); await reload(); setDay(null); toast("Plan regenerado"); }} />
     </div>
@@ -434,6 +500,136 @@ function TimeModal({ title, initial, onClose, onSave }: { title: string; initial
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button type="submit" loading={saving} disabled={!valid}>Guardar</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function WeekRow({ id, name, date, today, day, selected, start, onSelect, onAdd }: {
+  id: string; name: string; date: string; today: boolean; day: WorkoutDayMeta | null; selected: boolean; start: string | null;
+  onSelect: () => void; onAdd: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  const handle = (
+    <button type="button" {...attributes} {...listeners} aria-label={day ? `Mover ${day.title} a otro día` : `Mover el descanso del ${name.toLowerCase()}`}
+      className="grid h-9 w-7 shrink-0 cursor-grab touch-none place-items-center rounded-xl text-muted hover:bg-surface-2 active:cursor-grabbing">
+      <GripVertical className="h-4 w-4" />
+    </button>
+  );
+  return (
+    <li ref={setNodeRef} style={style} className={cx("relative", isDragging && "z-10 opacity-90 shadow-card")}>
+      {!day ? (
+        <div className={cx("flex items-center gap-2 rounded-3xl px-2 py-2 text-sm text-muted", today && "bg-surface-2/70")}>
+          {handle}
+          <DayBadge name={name} date={date} today={today} />
+          <span className="flex flex-1 items-center gap-1.5"><Moon className="h-4 w-4" aria-hidden /> Descanso</span>
+          <Button variant="ghost" size="sm" onClick={onAdd} aria-label={`Agregar rutina el ${name.toLowerCase()}`}><CalendarPlus className="h-4 w-4" /> Rutina</Button>
+        </div>
+      ) : (
+        <div className={cx("flex items-center gap-2 rounded-3xl border px-2 py-2 transition",
+          selected ? "border-primary-strong/40 bg-primary-strong/10" : "border-transparent hover:bg-surface-2/70", isDragging && "bg-surface")}>
+          {handle}
+          <button type="button" onClick={onSelect} aria-pressed={selected} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+            <DayBadge name={name} date={date} today={today} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-semibold">{day.title}{today ? " (hoy)" : ""}</span>
+              <span className="block truncate text-xs text-muted">{day.focus}</span>
+            </span>
+            <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
+              {start && formatTime(start)}
+              <span className="block font-normal text-muted">{day.estimatedMinutes} min</span>
+            </span>
+          </button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function ExerciseRow({ row, index, guideOpen, onToggleGuide, onSwap, onEdit, onRemove }: {
+  row: WorkoutExerciseRow; index: number; guideOpen: boolean; onToggleGuide: () => void; onSwap: () => void; onEdit: () => void; onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: row.id });
+  const ex = EXERCISE_BY_ID[row.exercise_id];
+  return (
+    <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cx("rounded-3xl border border-border/60 bg-surface-2/40 p-3", isDragging && "relative z-10 bg-surface shadow-card")}>
+      <div className="flex items-start gap-2">
+        <button type="button" {...attributes} {...listeners} aria-label={`Mover ${ex?.name ?? "ejercicio"}`}
+          className="mt-1 grid h-9 w-7 shrink-0 cursor-grab touch-none place-items-center rounded-xl text-muted hover:bg-surface-2 active:cursor-grabbing">
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-muted">{index + 1}</p>
+              <Link to={`/exercises/${row.exercise_id}`} className="font-semibold hover:text-primary-strong">{ex?.name ?? row.exercise_id}</Link>
+              <p className="text-xs text-muted">{ex?.primaryMuscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>
+            </div>
+            <div className="flex shrink-0">
+              <IconButton label={`Sustituir ${ex?.name}`} onClick={onSwap}><Repeat className="h-4 w-4" /></IconButton>
+              <IconButton label={`Editar ${ex?.name}`} onClick={onEdit}><Pencil className="h-4 w-4" /></IconButton>
+              <IconButton label={`Quitar ${ex?.name}`} onClick={onRemove}><Trash2 className="h-4 w-4" /></IconButton>
+            </div>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <Badge tone="primary">{row.sets} × {row.rep_min ? `${row.rep_min}${row.rep_max && row.rep_max !== row.rep_min ? `–${row.rep_max}` : ""} reps` : formatDuration(row.duration_s ?? 0)}</Badge>
+            {row.rest_s > 0 && <Badge>Descanso {formatDuration(row.rest_s)}</Badge>}
+            {row.target_rpe && <Badge>Esfuerzo {row.target_rpe}/10</Badge>}
+            {row.load_kg ? <Badge>{row.load_kg} kg</Badge> : null}
+          </div>
+          {row.notes && <p className="mt-2 text-sm text-muted">{row.notes}</p>}
+          <button type="button" onClick={onToggleGuide} aria-expanded={guideOpen}
+            className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary-strong">
+            Cómo se hace <ChevronDown className={cx("h-4 w-4 transition", guideOpen && "rotate-180")} aria-hidden />
+          </button>
+          {guideOpen && <div className="mt-2"><ExerciseGuide exerciseId={row.exercise_id} /></div>}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function AddDayModal({ weekday, onClose, onCreate }: { weekday: number; onClose: () => void; onCreate: (title: string, keys: string[], suggest: boolean) => Promise<void> }) {
+  const [keys, setKeys] = useState<string[]>(["glutes"]);
+  const [title, setTitle] = useState("Glúteos");
+  const [touched, setTouched] = useState(false);
+  const [suggest, setSuggest] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const label = (ks: string[]) => ks.map((k) => FOCUS_GROUPS.find((g) => g.key === k)?.label).filter(Boolean).join(" y ");
+  function toggleKey(k: string) {
+    const next = keys.includes(k) ? keys.filter((x) => x !== k) : [...keys, k];
+    setKeys(next);
+    if (!touched) setTitle(label(next) || "Rutina personalizada");
+  }
+  return (
+    <Modal open onClose={onClose} title={`Nueva rutina el ${WEEKDAYS[weekday].toLowerCase()}`}>
+      <form className="space-y-4" onSubmit={async (e) => {
+        e.preventDefault();
+        if (!keys.length) return;
+        setSaving(true);
+        await onCreate(title, keys, suggest);
+        setSaving(false);
+      }}>
+        <div>
+          <p className="mb-2 text-sm font-medium">¿Qué quieres entrenar?</p>
+          <div className="flex flex-wrap gap-2">
+            {FOCUS_GROUPS.map((g) => <Chip key={g.key} selected={keys.includes(g.key)} onClick={() => toggleKey(g.key)}>{g.label}</Chip>)}
+          </div>
+          {!keys.length && <p className="mt-1 text-sm text-danger" role="alert">Elige al menos un grupo muscular.</p>}
+        </div>
+        <Field label="Nombre de la rutina" htmlFor="day-title">
+          <Input id="day-title" value={title} maxLength={40} onChange={(e) => { setTitle(e.target.value); setTouched(true); }} />
+        </Field>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={suggest} onChange={(e) => setSuggest(e.target.checked)} className="h-4 w-4" />
+          Sugerir ejercicios compatibles con mi equipo y mis limitaciones
+        </label>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" loading={saving} disabled={!keys.length}>Crear rutina</Button>
         </div>
       </form>
     </Modal>

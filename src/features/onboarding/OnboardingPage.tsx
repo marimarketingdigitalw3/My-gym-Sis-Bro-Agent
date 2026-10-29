@@ -89,6 +89,13 @@ const STEPS = [
   { key: "confirm", title: "Confirmación" },
 ] as const;
 
+type StepKey = (typeof STEPS)[number]["key"];
+
+/** Las preguntas del ciclo menstrual solo aplican a mujeres. */
+function stepsFor(sex: BiologicalSex | "") {
+  return STEPS.filter((s) => s.key !== "cycle" || sex === "female");
+}
+
 const KNOWN = ["Sentadilla", "Peso muerto", "Press de banca", "Dominadas", "Hip thrust", "Flexiones", "Zancadas", "Plancha", "Remo", "Press militar"];
 const COUNTRIES = ["Colombia", "México", "Argentina", "Chile", "Perú", "Ecuador", "Venezuela", "España", "Estados Unidos", "Otro"];
 const ALLERGENS: { key: Allergen; label: string }[] = [
@@ -173,23 +180,24 @@ const basicSchema = z.object({
   targetWeightKg: z.string().trim().refine((v) => v === "" || (Number(v) >= 25 && Number(v) <= 350), "Peso objetivo entre 25 y 350 kg."),
 });
 
-function validate(step: number, a: Answers): Record<string, string> {
+function validate(step: StepKey, a: Answers): Record<string, string> {
   const errors: Record<string, string> = {};
-  if (step === 0) {
+  if (step === "basic") {
     const r = basicSchema.safeParse(a);
     if (!r.success) for (const issue of r.error.issues) errors[String(issue.path[0])] ??= issue.message;
+    if (!a.sex) errors.sex = "Elige mujer u hombre para adaptar tus preguntas y estimaciones.";
   }
-  if (step === 1 && a.goals.length === 0) errors.goals = "Elige al menos un objetivo.";
-  if (step === 2 && !a.level) errors.level = "Elige tu nivel actual.";
-  if (step === 3) {
+  if (step === "goals" && a.goals.length === 0) errors.goals = "Elige al menos un objetivo.";
+  if (step === "fitness" && !a.level) errors.level = "Elige tu nivel actual.";
+  if (step === "environment") {
     if (!a.environment) errors.environment = "Elige dónde entrenas.";
   }
-  if (step === 4) {
+  if (step === "lifestyle") {
     if (!a.activityLevel) errors.activityLevel = "Elige tu nivel de actividad diaria.";
     if (a.dailySteps && (Number(a.dailySteps) < 0 || Number(a.dailySteps) > 60000)) errors.dailySteps = "Pasos entre 0 y 60.000.";
   }
-  if (step === 5 && !a.health.acknowledgedDisclaimer) errors.disclaimer = "Necesitamos que leas y aceptes este aviso para continuar.";
-  if (step === 8 && a.cycleEnabled) {
+  if (step === "health" && !a.health.acknowledgedDisclaimer) errors.disclaimer = "Necesitamos que leas y aceptes este aviso para continuar.";
+  if (step === "cycle" && a.cycleEnabled) {
     const c = a.cycle;
     if (!a.lastPeriodUnknown && !c.last_period_start) errors.lastPeriod = "Indica la fecha o marca que no la recuerdas.";
     if (c.last_period_start && c.last_period_start > todayISO()) errors.lastPeriod = "La fecha no puede ser futura.";
@@ -203,8 +211,9 @@ export default function OnboardingPage() {
   const bundle = useBundle();
   const { refresh } = useUserData();
   const navigate = useNavigate();
-  const [step, setStep] = useState(Math.min(bundle.profile.onboarding_step, STEPS.length - 1));
   const [a, setA] = useState<Answers>(() => initialAnswers(bundle));
+  const steps = useMemo(() => stepsFor(a.sex), [a.sex]);
+  const [step, setStep] = useState(() => Math.min(bundle.profile.onboarding_step, stepsFor(bundle.profile.sex ?? "").length - 1));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -213,13 +222,14 @@ export default function OnboardingPage() {
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   async function persist(stepIndex: number) {
-    switch (STEPS[stepIndex].key) {
+    switch (steps[stepIndex].key) {
       case "basic":
         await updateProfile({
           display_name: a.displayName.trim(), birth_date: a.birthDate, height_cm: Number(a.heightCm), weight_kg: Number(a.weightKg),
           target_weight_kg: a.targetWeightKg ? Number(a.targetWeightKg) : null, country: a.country, units: a.units, language: a.language,
           sex: a.sex || null, gender_identity: a.genderIdentity.trim() || null, theme: a.theme,
         });
+        if (a.sex !== "female") await updateSettings({ cycle_tracking_enabled: false });
         break;
       case "goals":
         await saveGoals(a.goals, a.targetWeeks);
@@ -266,11 +276,11 @@ export default function OnboardingPage() {
         }
         break;
     }
-    await updateProfile({ onboarding_step: Math.min(stepIndex + 1, STEPS.length - 1) });
+    await updateProfile({ onboarding_step: Math.min(stepIndex + 1, steps.length - 1) });
   }
 
   async function next() {
-    const errs = validate(step, a);
+    const errs = validate(steps[step].key, a);
     setErrors(errs);
     if (Object.keys(errs).length) {
       document.querySelector("[role=alert]")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -295,7 +305,7 @@ export default function OnboardingPage() {
     try {
       const fresh = await loadUserBundle();
       await regeneratePlan(generatorInputFromBundle(fresh));
-      await updateProfile({ onboarding_completed: true, onboarding_step: STEPS.length - 1 });
+      await updateProfile({ onboarding_completed: true, onboarding_step: steps.length - 1 });
       await refresh();
       navigate("/", { replace: true });
     } catch (e) {
@@ -305,15 +315,15 @@ export default function OnboardingPage() {
     }
   }
 
-  const current = STEPS[step];
+  const current = steps[Math.min(step, steps.length - 1)];
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-20 bg-bg/60 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
           <BrandMark compact />
-          <span className="text-sm text-muted">Paso {step + 1} de {STEPS.length}</span>
+          <span className="text-sm text-muted">Paso {step + 1} de {steps.length}</span>
         </div>
-        <div className="mx-auto max-w-2xl px-4 pb-3"><ProgressBar value={step + 1} max={STEPS.length} label="Progreso del cuestionario" /></div>
+        <div className="mx-auto max-w-2xl px-4 pb-3"><ProgressBar value={step + 1} max={steps.length} label="Progreso del cuestionario" /></div>
       </header>
 
       <main className="mx-auto max-w-2xl px-4 pb-32 pt-6">
@@ -372,6 +382,14 @@ const THEME_OPTIONS: { key: ThemeName; title: string; text: string; swatch: stri
 ];
 
 function BasicStep({ a, set, errors }: { a: Answers; set: SetFn; errors: Record<string, string> }) {
+  const setSex = (v: BiologicalSex | "") => {
+    set("sex", v);
+    // Ciclo, embarazo y posparto solo aplican a mujeres.
+    if (v === "male") {
+      set("cycleEnabled", false);
+      set("health", { ...a.health, pregnancyStatus: "none" });
+    }
+  };
   return (
     <>
       <Section title="¿Cómo quieres ver tu app?" hint="Elige la experiencia que más te guste. El entrenamiento no depende de esta elección y puedes cambiarla en Ajustes.">
@@ -421,11 +439,11 @@ function BasicStep({ a, set, errors }: { a: Answers; set: SetFn; errors: Record<
               <option value="en">English</option>
             </Select>
           </Field>
-          <Field label="Sexo biológico" optional htmlFor="sex" hint="Solo se usa para estimar tu gasto energético con más precisión.">
-            <Select id="sex" value={a.sex} onChange={(e) => set("sex", e.target.value as BiologicalSex | "")}>
-              <option value="">Prefiero no decirlo</option>
-              <option value="female">Femenino</option>
-              <option value="male">Masculino</option>
+          <Field label="Sexo biológico" htmlFor="sex" error={errors.sex} hint="Adapta tus preguntas (por ejemplo, el ciclo menstrual solo aplica a mujeres) y tus estimaciones.">
+            <Select id="sex" value={a.sex} onChange={(e) => setSex(e.target.value as BiologicalSex | "")}>
+              <option value="">Selecciona</option>
+              <option value="female">Mujer</option>
+              <option value="male">Hombre</option>
             </Select>
           </Field>
         </div>
@@ -612,13 +630,15 @@ function HealthStep({ a, setHealth, toggle, errors }: { a: Answers; setHealth: (
         <Toggle label="Siento dolor o molestias cuando hago ejercicio" checked={!!h.painDuringExercise} onChange={(v) => setHealth({ painDuringExercise: v })} />
       </Card>
 
-      <Section title="Embarazo o posparto" hint="Solo si aplica y quieres indicarlo.">
-        <div className="flex flex-wrap gap-2">
-          {([["none", "No aplica"], ["pregnant", "Embarazo"], ["postpartum", "Posparto"], ["prefer_not", "Prefiero no decirlo"]] as const).map(([k, l]) => (
-            <Chip key={k} selected={(h.pregnancyStatus ?? "none") === k} onClick={() => setHealth({ pregnancyStatus: k })}>{l}</Chip>
-          ))}
-        </div>
-      </Section>
+      {a.sex === "female" && (
+        <Section title="Embarazo o posparto" hint="Solo si aplica y quieres indicarlo.">
+          <div className="flex flex-wrap gap-2">
+            {([["none", "No aplica"], ["pregnant", "Embarazo"], ["postpartum", "Posparto"], ["prefer_not", "Prefiero no decirlo"]] as const).map(([k, l]) => (
+              <Chip key={k} selected={(h.pregnancyStatus ?? "none") === k} onClick={() => setHealth({ pregnancyStatus: k })}>{l}</Chip>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section title="¿Has tenido alguno de estos síntomas al hacer ejercicio?" hint="Marca solo si te ha pasado.">
         <div className="space-y-2">
@@ -798,7 +818,7 @@ function ConfirmStep({ a }: { a: Answers }) {
     ["Equipo", a.equipment.map((e) => EQUIPMENT_LABELS[e]).join(", ") || "Peso corporal"],
     ["Zonas a cuidar", (a.health.limitations ?? []).map((j) => JOINT_LABELS[j]).join(", ") || "Ninguna"],
     ["Alimentación", `${a.diet === "omnivore" ? "Omnívora" : a.diet === "vegan" ? "Vegana" : a.diet === "vegetarian" ? "Vegetariana" : "Pescetariana"} · ${a.mealsPerDay} comidas`],
-    ["Cycle Wellness", a.cycleEnabled ? "Activado" : "Desactivado"],
+    ...(a.sex === "female" ? [["Cycle Wellness", a.cycleEnabled ? "Activado" : "Desactivado"] as [string, ReactNode]] : []),
   ], [a]);
   return (
     <>

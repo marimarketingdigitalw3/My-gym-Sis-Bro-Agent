@@ -199,6 +199,12 @@
   }
 }
 
+/* Ilustraciones de ejercicios: alternan la pose inicial y la final. */
+.exercise-frame-a { animation: exercise-a 2.4s ease-in-out infinite; }
+.exercise-frame-b { animation: exercise-b 2.4s ease-in-out infinite; }
+@keyframes exercise-a { 0%, 40% { opacity: 1; } 50%, 90% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes exercise-b { 0%, 40% { opacity: 0; } 50%, 90% { opacity: 1; } 100% { opacity: 0; } }
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
