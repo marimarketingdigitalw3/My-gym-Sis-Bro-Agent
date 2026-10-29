@@ -202,6 +202,7 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
 }) {
   const reduced = usePrefersReducedMotion();
   const key = poseKey(exercise);
+  if (key === "jump_rope") return <JumpRopeFront variant={variant} size={size} className={className} name={exercise.name} />;
   const [pa, pb] = POSES[key];
   const A = rig(pa);
   const B = rig(pb);
@@ -241,7 +242,7 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
   const foreArmW = female ? 7 : 8;
   const pullBar = exercise.pattern === "vertical_pull";
   const benchKind = key === "bench_press" ? "bench" : key === "hip_extension" ? "box" : null;
-  const machine = (["bike", "treadmill", "elliptical", "rower", "jump_rope", "yoga_lunge"] as const).find((m) => m === key) ?? null;
+  const machine = (["bike", "treadmill", "elliptical", "rower", "yoga_lunge"] as const).find((m) => m === key) ?? null;
 
   // Piernas: pantalón largo en ambos (azul claro en ella, joggers negros en él) y zapatillas de color.
   const leg = (far: boolean) => {
@@ -317,15 +318,6 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
           <rect x={120} y={158} width={26} height={8} rx={4} fill={MACHINE.body} />
           <rect x={72} y={160} width={26} height={8} rx={4} fill={MACHINE.body} />
         </g>
-      )}
-      {machine === "jump_rope" && (
-        // Cuerda: pasa por encima de la cabeza y por debajo de los pies (se dibuja detrás de la figura).
-        <path d="M124 96 Q100 -4 76 96" fill="none" stroke={c.line} strokeWidth={1.8} strokeLinecap="round" opacity={0.85}>
-          {!reduced && (
-            <animate attributeName="d" dur={dur} repeatCount="indefinite"
-              values="M124 96 Q100 -4 76 96;M124 96 Q100 206 76 96;M124 96 Q100 -4 76 96" keyTimes="0;0.5;1" />
-          )}
-        </path>
       )}
       {machine === "yoga_lunge" && (
         <g>
@@ -427,6 +419,90 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
           )}
         </g>
       )}
+    </svg>
+  );
+}
+
+/**
+ * Vista frontal para saltar la cuerda: el personaje de frente, con la cuerda girando
+ * por encima de la cabeza y bajo los pies, como en la ilustración de referencia.
+ */
+function JumpRopeFront({ variant, size, className, name }: { variant: "female" | "male"; size: number; className?: string; name: string }) {
+  const reduced = usePrefersReducedMotion();
+  const c = PALETTES[variant];
+  const female = variant === "female";
+  const dur = "0.8s";
+  const hop = (from: number, to: number) => reduced ? null : (
+    <animateTransform attributeName="transform" type="translate" dur={dur} repeatCount="indefinite"
+      values={`0 ${from};0 ${to};0 ${from}`} keyTimes="0;0.5;1" calcMode="spline" keySplines={KEY_SPLINES} />
+  );
+  const o = { stroke: c.line, strokeWidth: 0.8 };
+  return (
+    <svg viewBox="0 0 200 200" width={size} height={size} className={className} role="img"
+      aria-label={`Animación de referencia: ${female ? "mujer" : "hombre"} haciendo ${name}`}>
+      {/* Mitad trasera de la cuerda (detrás del cuerpo) */}
+      <path d="M48 112 Q100 -10 152 112" fill="none" stroke={c.line} strokeWidth={1.4} strokeLinecap="round">
+        {!reduced && <animate attributeName="d" dur={dur} repeatCount="indefinite" values="M48 112 Q100 -10 152 112;M48 112 Q100 112 152 112;M48 112 Q100 -10 152 112" keyTimes="0;0.5;1" />}
+      </path>
+      <g>
+        {hop(0, -9)}
+        {/* Piernas: ligeramente flexionadas, con zapatillas de color */}
+        <g>
+          <path d="M88 118 L84 160 L82 184" fill="none" stroke={c.line} strokeWidth={14.4} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M112 118 L116 160 L118 184" fill="none" stroke={c.line} strokeWidth={14.4} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M88 118 L84 160 L82 184" fill="none" stroke={c.bottom} strokeWidth={13} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M112 118 L116 160 L118 184" fill="none" stroke={c.bottom} strokeWidth={13} strokeLinecap="round" strokeLinejoin="round" />
+          <ellipse cx={81} cy={189} rx={9.5} ry={5} fill={c.shoe} {...o} />
+          <ellipse cx={119} cy={189} rx={9.5} ry={5} fill={c.shoe} {...o} />
+        </g>
+        {/* Torso: sudadera con capucha y bolsillo canguro (él) o top (ella) */}
+        <path d="M78 70 Q100 62 122 70 L126 122 Q100 128 74 122 Z" fill={c.top} {...o} />
+        {!female && (
+          <>
+            <path d="M84 100 Q100 104 116 100 L114 122 Q100 126 86 122 Z" fill="none" stroke={c.line} strokeWidth={0.8} />
+            <path d="M86 66 Q100 58 114 66 Q108 76 100 78 Q92 76 86 66 Z" fill={c.topFar} {...o} />
+            <path d="M97 78 L96 92 M103 78 L104 92" stroke="#FFFFFF" strokeWidth={1.2} strokeLinecap="round" />
+          </>
+        )}
+        {female && <path d="M86 72 Q100 80 114 72" fill="none" stroke={c.line} strokeWidth={0.8} />}
+        {/* Brazos abiertos sosteniendo la cuerda, con raya coral en las mangas (él) */}
+        <g>
+          <path d="M80 76 L60 96 L50 110" fill="none" stroke={c.line} strokeWidth={10.6} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M120 76 L140 96 L150 110" fill="none" stroke={c.line} strokeWidth={10.6} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M80 76 L60 96 L50 110" fill="none" stroke={c.top} strokeWidth={9.4} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M120 76 L140 96 L150 110" fill="none" stroke={c.top} strokeWidth={9.4} strokeLinecap="round" strokeLinejoin="round" />
+          {!female && (
+            <g stroke={c.accent} strokeWidth={2} strokeLinecap="round">
+              <path d="M72 80 L66 86 M69 77 L63 83" /><path d="M128 80 L134 86 M131 77 L137 83" />
+            </g>
+          )}
+          <circle cx={50} cy={111} r={4.2} fill={c.skin} {...o} />
+          <circle cx={150} cy={111} r={4.2} fill={c.skin} {...o} />
+          <rect x={44} y={107} width={12} height={5} rx={2.5} fill={MACHINE.body} {...o} />
+          <rect x={144} y={107} width={12} height={5} rx={2.5} fill={MACHINE.body} {...o} />
+        </g>
+        {/* Cuello y cabeza de frente */}
+        <rect x={94} y={58} width={12} height={12} rx={4} fill={c.skin} />
+        <ellipse cx={100} cy={46} rx={14} ry={16} fill={c.skin} {...o} />
+        {female ? (
+          <>
+            <path d="M86 44 Q86 28 100 28 Q114 28 114 44 Q108 36 100 36 Q92 36 86 44 Z" fill={c.hair} />
+            <circle cx={100} cy={28} r={6} fill={c.hair} />
+          </>
+        ) : (
+          <>
+            <path d="M85 44 Q85 27 100 27 Q115 27 115 44 Q108 38 100 38 Q92 38 85 44 Z" fill={c.hair} />
+            <circle cx={90} cy={31} r={4} fill={c.hair} /><circle cx={100} cy={28} r={4.5} fill={c.hair} /><circle cx={110} cy={31} r={4} fill={c.hair} />
+          </>
+        )}
+        <circle cx={94.5} cy={47} r={1.3} fill={c.line} /><circle cx={105.5} cy={47} r={1.3} fill={c.line} />
+        <path d="M96 54 Q100 57 104 54" fill="none" stroke={c.line} strokeWidth={0.9} strokeLinecap="round" />
+        {female && <circle cx={100} cy={60} r={0} />}
+      </g>
+      {/* Mitad delantera de la cuerda (delante del cuerpo) */}
+      <path d="M48 112 Q100 112 152 112" fill="none" stroke={c.line} strokeWidth={1.4} strokeLinecap="round">
+        {!reduced && <animate attributeName="d" dur={dur} repeatCount="indefinite" values="M48 112 Q100 112 152 112;M48 112 Q100 214 152 112;M48 112 Q100 112 152 112" keyTimes="0;0.5;1" />}
+      </path>
     </svg>
   );
 }
