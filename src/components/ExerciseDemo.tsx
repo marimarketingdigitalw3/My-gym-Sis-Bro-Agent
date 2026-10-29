@@ -113,11 +113,25 @@ const POSES: Record<string, [Pose, Pose]> = {
     { head: [116, 88], neck: [108, 102], hip: [84, 150], knee: [122, 128], ankle: [146, 156], toe: [156, 160], elbow: [128, 118], wrist: [148, 130] },
     { head: [78, 84], neck: [84, 100], hip: [66, 150], knee: [104, 146], ankle: [146, 156], toe: [156, 160], elbow: [74, 128], wrist: [100, 128] },
   ],
+  // Saltar la cuerda: pequeños saltos rítmicos; la cuerda gira (se dibuja aparte).
+  jump_rope: [
+    s({ head: [100, 36], neck: [100, 52], hip: [100, 106], knee: [102, 144], ankle: [100, 180], toe: [113, 182], elbow: [112, 84], wrist: [124, 96] }),
+    s({ head: [100, 24], neck: [100, 40], hip: [100, 94], knee: [104, 128], ankle: [98, 162], toe: [110, 168], elbow: [112, 72], wrist: [124, 84] }),
+  ],
+  // Yoga: zancada arrodillada con brazos arriba, luego inclinación suave al frente.
+  yoga_lunge: [
+    { head: [96, 44], neck: [98, 60], hip: [92, 118], knee: [128, 134], ankle: [132, 172], toe: [148, 174], kneeF: [62, 172], ankleF: [38, 172], toeF: [30, 180], elbow: [104, 38], wrist: [112, 16], elbowF: [90, 38], wristF: [84, 16] },
+    { head: [142, 84], neck: [132, 94], hip: [92, 118], knee: [128, 134], ankle: [132, 172], toe: [148, 174], kneeF: [62, 172], ankleF: [38, 172], toeF: [30, 180], elbow: [146, 118], wrist: [150, 146], elbowF: [138, 118], wristF: [142, 146] },
+  ],
 };
 
 /** Ejercicios de cardio con máquina propia. */
 const MACHINE_BY_ID: Record<string, string> = {
   "stationary-bike": "bike", "treadmill-incline-walk": "treadmill", elliptical: "elliptical", "rowing-machine": "rower",
+  "jumping-jacks": "jump_rope",
+};
+const MOBILITY_BY_ID: Record<string, string> = {
+  "worlds-greatest-stretch": "yoga_lunge", "hip-flexor-stretch": "yoga_lunge",
 };
 
 function poseKey(ex: Pick<Exercise, "pattern" | "equipment" | "id">): string {
@@ -128,7 +142,7 @@ function poseKey(ex: Pick<Exercise, "pattern" | "equipment" | "id">): string {
   if (p === "core_rotation") return "rotation";
   if (p === "carry") return "walk";
   if (p === "cardio") return MACHINE_BY_ID[ex.id] ?? "run";
-  if (p === "mobility") return "stretch";
+  if (p === "mobility") return MOBILITY_BY_ID[ex.id] ?? "stretch";
   return POSES[p] ? p : "stretch";
 }
 
@@ -170,13 +184,14 @@ function rig(a: Pose) {
 type Rig = ReturnType<typeof rig>;
 type Joint = Exclude<keyof Rig, "headAngle">;
 
-interface Palette { skin: string; skinFar: string; top: string; topFar: string; bottom: string; bottomFar: string; hair: string; shoe: string; shoeFar: string; accent: string }
+interface Palette { skin: string; skinFar: string; top: string; topFar: string; bottom: string; bottomFar: string; hair: string; shoe: string; shoeFar: string; accent: string; sleeve: string; line: string }
 // Estilo plano de la referencia: formas suaves sin contorno, piel durazno y ropa lila o violeta.
+// Paleta de la colección "Gym & Fitness Illustrations": azul claro, lila, coral, negro y blanco.
 const PALETTES: Record<"female" | "male", Palette> = {
-  female: { skin: "#F2BFA4", skinFar: "#DDA186", top: "#F08AA8", topFar: "#D9709A", bottom: "#6D4FD6", bottomFar: "#5A3FB8", hair: "#3B2A2A", shoe: "#FFFFFF", shoeFar: "#DDE0EE", accent: "#FFD23F" },
-  male: { skin: "#F2BFA4", skinFar: "#DDA186", top: "#A99CF2", topFar: "#8E80E0", bottom: "#6D4FD6", bottomFar: "#5A3FB8", hair: "#3B2A2A", shoe: "#FFFFFF", shoeFar: "#DDE0EE", accent: "#6D4FD6" },
+  female: { skin: "#F4C4A8", skinFar: "#E2A98B", top: "#F47C72", topFar: "#DE6A61", bottom: "#A8C8F5", bottomFar: "#8FB3E6", hair: "#171717", shoe: "#A99AF7", shoeFar: "#8F80E6", accent: "#FF765F", sleeve: "#F47C72", line: "#171717" },
+  male: { skin: "#E9B191", skinFar: "#D39A78", top: "#A8C8F5", topFar: "#8FB3E6", bottom: "#171717", bottomFar: "#3A3A3A", hair: "#171717", shoe: "#FF765F", shoeFar: "#E25F4A", accent: "#F47C72", sleeve: "#A8C8F5", line: "#171717" },
 };
-const MACHINE = { body: "#8F97B8", light: "#B3BAD4", dark: "#5E6788", base: "#E4E8F5" };
+const MACHINE = { body: "#A8C8F5", light: "#D5E5FB", dark: "#171717", base: "#EEF3FB" };
 
 /**
  * `variant`: "female" dibuja una mujer (top deportivo, leggings y coleta); "male", un hombre
@@ -192,7 +207,7 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
   const B = rig(pb);
   const female = variant === "female";
   const c = PALETTES[variant];
-  const dur = key === "run" || key === "walk" ? "1.1s" : "2.8s";
+  const dur = key === "run" || key === "walk" || key === "treadmill" ? "1.1s" : key === "jump_rope" ? "0.8s" : key === "yoga_lunge" ? "4s" : "2.8s";
   const kind = (["barbell", "dumbbells", "kettlebells"] as const).find((k) => exercise.equipment.includes(k)) ?? null;
 
   const anim = (attr: string, from: number, to: number) => reduced || from === to ? null : (
@@ -203,18 +218,20 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
       values={`${from.join(" ")};${to.join(" ")};${from.join(" ")}`} keyTimes="0;0.5;1" calcMode="spline" keySplines={KEY_SPLINES} />
   );
   /** Segmento redondeado entre dos articulaciones (miembro con volumen). */
-  const seg = (p: Joint, q: Joint, w: number, color: string) => {
+  const seg = (p: Joint, q: Joint, w: number, color: string, outline = true) => {
     const [x1, y1] = A[p] as P; const [x2, y2] = A[q] as P;
     const [bx1, by1] = B[p] as P; const [bx2, by2] = B[q] as P;
-    return (
-      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={w} strokeLinecap="round">
+    const line = (stroke: string, width: number) => (
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke} strokeWidth={width} strokeLinecap="round">
         {anim("x1", x1, bx1)}{anim("y1", y1, by1)}{anim("x2", x2, bx2)}{anim("y2", y2, by2)}
       </line>
     );
+    // Contorno fino, como en la ilustración de referencia.
+    return outline ? <g>{line(c.line, w + 1)}{line(color, w)}</g> : line(color, w);
   };
-  const dot = (p: Joint, r: number, color: string) => {
+  const dot = (p: Joint, r: number, color: string, outline = true) => {
     const [x, y] = A[p] as P; const [bx, by] = B[p] as P;
-    return <circle cx={x} cy={y} r={r} fill={color}>{anim("cx", x, bx)}{anim("cy", y, by)}</circle>;
+    return <circle cx={x} cy={y} r={r} fill={color} stroke={outline ? c.line : "none"} strokeWidth={0.5}>{anim("cx", x, bx)}{anim("cy", y, by)}</circle>;
   };
 
   const torsoW = female ? 20 : 24;
@@ -224,29 +241,30 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
   const foreArmW = female ? 7 : 8;
   const pullBar = exercise.pattern === "vertical_pull";
   const benchKind = key === "bench_press" ? "bench" : key === "hip_extension" ? "box" : null;
-  const machine = (["bike", "treadmill", "elliptical", "rower"] as const).find((m) => m === key) ?? null;
+  const machine = (["bike", "treadmill", "elliptical", "rower", "jump_rope", "yoga_lunge"] as const).find((m) => m === key) ?? null;
   const shadowX = (A.hip[0] + A.ankle[0]) / 2;
 
-  // Piernas: leggings completas en ella; pantaloneta y pierna descubierta en él.
+  // Piernas: pantalón largo en ambos (azul claro en ella, joggers negros en él) y zapatillas de color.
   const leg = (far: boolean) => {
     const sfx = far ? "F" : "";
     const knee = `knee${sfx}` as Joint; const ankle = `ankle${sfx}` as Joint; const toe = `toe${sfx}` as Joint;
     return (
       <g>
         {seg("hip", knee, thighW, far ? c.bottomFar : c.bottom)}
-        {seg(knee, ankle, shinW, female ? (far ? c.bottomFar : c.bottom) : (far ? c.skinFar : c.skin))}
-        {!female && seg("hip", knee, thighW + 1, far ? c.bottomFar : c.bottom)}
+        {seg(knee, ankle, shinW, far ? c.bottomFar : c.bottom)}
         {seg(ankle, toe, 9, far ? c.shoeFar : c.shoe)}
       </g>
     );
   };
+  // Brazos: manga larga (sudadera en él, con raya coral; top en ella) y mano de piel.
   const arm = (far: boolean) => {
     const sfx = far ? "F" : "";
     const elbow = `elbow${sfx}` as Joint; const wrist = `wrist${sfx}` as Joint;
     return (
       <g>
-        {seg("shoulder", elbow, upperArmW, far ? c.skinFar : c.skin)}
-        {seg(elbow, wrist, foreArmW, far ? c.skinFar : c.skin)}
+        {seg("shoulder", elbow, upperArmW, far ? c.topFar : c.top)}
+        {seg(elbow, wrist, foreArmW, far ? c.topFar : c.top)}
+        {!female && seg("shoulder", elbow, 2.2, far ? "#DE6A61" : c.accent, false)}
         {dot(wrist, foreArmW / 2 + 1, far ? c.skinFar : c.skin)}
       </g>
     );
@@ -256,7 +274,7 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
     <svg viewBox="0 0 200 200" width={size} height={size} className={className} role="img"
       aria-label={`Animación de referencia: ${female ? "mujer" : "hombre"} haciendo ${exercise.name}`}>
       {/* Escenario: base suave como en la referencia */}
-      <rect x={Math.max(8, shadowX - 64)} y={183} width={128} height={9} rx={4.5} fill={MACHINE.base} />
+      <ellipse cx={shadowX} cy={188} rx={44} ry={4} fill={MACHINE.base} />
       {pullBar && (
         <g stroke={MACHINE.body} strokeLinecap="round">
           <line x1="64" y1="12" x2="136" y2="12" strokeWidth={6} />
@@ -302,6 +320,22 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
           <rect x={72} y={160} width={26} height={8} rx={4} fill={MACHINE.body} />
         </g>
       )}
+      {machine === "jump_rope" && (
+        // Cuerda: pasa por encima de la cabeza y por debajo de los pies (se dibuja detrás de la figura).
+        <path d="M124 96 Q100 -4 76 96" fill="none" stroke={c.line} strokeWidth={1.8} strokeLinecap="round" opacity={0.85}>
+          {!reduced && (
+            <animate attributeName="d" dur={dur} repeatCount="indefinite"
+              values="M124 96 Q100 -4 76 96;M124 96 Q100 206 76 96;M124 96 Q100 -4 76 96" keyTimes="0;0.5;1" />
+          )}
+        </path>
+      )}
+      {machine === "yoga_lunge" && (
+        <g>
+          <rect x={14} y={176} width={172} height={6} rx={3} fill={MACHINE.dark} />
+          <rect x={160} y={150} width={22} height={26} rx={3} fill={MACHINE.light} stroke={c.line} strokeWidth={0.8} />
+          <circle cx={171} cy={160} r={3} fill={c.accent} /><circle cx={171} cy={169} r={2} fill={c.line} />
+        </g>
+      )}
       {machine === "rower" && (
         <g>
           <rect x={40} y={162} width={132} height={9} rx={4.5} fill={MACHINE.dark} />
@@ -317,19 +351,9 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
       {arm(true)}
 
       {/* Tronco: top deportivo o camiseta; abdomen descubierto en el top de ella */}
-      {female ? (
-        <>
-          {seg("waist", "hip", torsoW - 3, c.skin)}
-          {seg("shoulder", "waist", torsoW, c.top)}
-          {dot("chest", 7.5, c.top)}
-          {dot("hip", torsoW / 2 + 0.5, c.bottom)}
-        </>
-      ) : (
-        <>
-          {seg("shoulder", "hip", torsoW, c.top)}
-          {dot("hip", torsoW / 2 + 0.5, c.bottom)}
-        </>
-      )}
+      {seg("shoulder", "hip", torsoW, c.top)}
+      {female && dot("chest", 6.5, c.top, false)}
+      {dot("hip", torsoW / 2 + 0.5, c.bottom)}
       {seg("neck", "shoulder", 8, c.skin)}
 
       {/* Lado cercano */}
@@ -343,18 +367,24 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
             <animateTransform attributeName="transform" type="rotate" dur={dur} repeatCount="indefinite"
               values={`${A.headAngle};${B.headAngle};${A.headAngle}`} keyTimes="0;0.5;1" calcMode="spline" keySplines={KEY_SPLINES} />
           )}
-          {female && <path d="M-9 -7 Q-24 -6 -23 12 Q-19 5 -10 2 Z" fill={c.hair} />}
-          {/* Cabeza ovalada con mentón hacia el frente, como en la referencia */}
-          <path d="M-10 -4 Q-11 -13 0 -13 Q12 -13 12 -1 Q12 8 8 11 Q3 14 -3 12 Q-10 9 -10 -4 Z" fill={c.skin} />
+          {/* Cabeza ovalada con contorno fino */}
+          <path d="M-10 -4 Q-11 -13 0 -13 Q12 -13 12 -1 Q12 8 8 11 Q3 14 -3 12 Q-10 9 -10 -4 Z" fill={c.skin} stroke={c.line} strokeWidth={0.6} />
           {female ? (
             <>
+              {/* Cabello recogido en moño */}
               <path d="M-10.5 1 Q-12 -13 1 -13 Q11 -12.5 11.5 -3 Q4 -8 -3 -7 Q-8 -4 -10.5 1 Z" fill={c.hair} />
-              <circle cx={-10.5} cy={-5} r={2.6} fill={c.accent} />
+              <circle cx={-11} cy={-6} r={4.2} fill={c.hair} />
+              <circle cx={-9} cy={-9} r={1.3} fill={c.accent} />
             </>
           ) : (
-            <path d="M-10.5 2 Q-12 -14 2 -13.5 Q12 -12 12 -2 Q8 -6 3 -5.5 Q-2 -8 -6 -4 Q-9 -1 -10.5 2 Z" fill={c.hair} />
+            <>
+              {/* Cabello corto rizado */}
+              <path d="M-10.5 2 Q-12 -14 2 -13.5 Q12 -12 12 -2 Q8 -6 3 -5.5 Q-2 -8 -6 -4 Q-9 -1 -10.5 2 Z" fill={c.hair} />
+              <circle cx={-6} cy={-11} r={3} fill={c.hair} /><circle cx={1} cy={-13.5} r={3} fill={c.hair} /><circle cx={8} cy={-11} r={2.6} fill={c.hair} />
+            </>
           )}
-          <circle cx={7.5} cy={1} r={1.2} fill="#3B2A2A" opacity={0.7} />
+          <circle cx={7.5} cy={1} r={1.2} fill={c.line} />
+          <path d="M8.5 5.5 Q10 6.5 11 5.2" fill="none" stroke={c.line} strokeWidth={0.8} strokeLinecap="round" />
         </g>
       </g>
 
