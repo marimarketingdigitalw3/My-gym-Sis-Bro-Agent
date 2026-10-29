@@ -242,7 +242,6 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
   const pullBar = exercise.pattern === "vertical_pull";
   const benchKind = key === "bench_press" ? "bench" : key === "hip_extension" ? "box" : null;
   const machine = (["bike", "treadmill", "elliptical", "rower", "jump_rope", "yoga_lunge"] as const).find((m) => m === key) ?? null;
-  const shadowX = (A.hip[0] + A.ankle[0]) / 2;
 
   // Piernas: pantalón largo en ambos (azul claro en ella, joggers negros en él) y zapatillas de color.
   const leg = (far: boolean) => {
@@ -273,8 +272,7 @@ export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
   return (
     <svg viewBox="0 0 200 200" width={size} height={size} className={className} role="img"
       aria-label={`Animación de referencia: ${female ? "mujer" : "hombre"} haciendo ${exercise.name}`}>
-      {/* Escenario: base suave como en la referencia */}
-      <ellipse cx={shadowX} cy={188} rx={44} ry={4} fill={MACHINE.base} />
+      {/* Solo el personaje: sin suelo ni sombra; las máquinas se dibujan cuando el ejercicio las usa. */}
       {pullBar && (
         <g stroke={MACHINE.body} strokeLinecap="round">
           <line x1="64" y1="12" x2="136" y2="12" strokeWidth={6} />
