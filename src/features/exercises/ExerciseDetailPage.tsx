@@ -55,8 +55,7 @@ export default function ExerciseDetailPage() {
               <ExerciseMedia exerciseId={ex.id} size={220} fallbackVariant={variant} />
             </div>
             <div className="min-w-0">
-              <CardHeader title="Así se hace" subtitle="Posición inicial y final del movimiento." />
-              <ol className="list-decimal space-y-2 pl-5 text-[15px]">{ex.instructions.map((s) => <li key={s}>{s}</li>)}</ol>
+              <CardHeader title="Así se hace" subtitle="La ilustración alterna la posición inicial y la final. Los pasos están justo debajo." />
             </div>
           </div>
         </Card>
@@ -84,7 +83,7 @@ export default function ExerciseDetailPage() {
 
       <p className="flex items-start gap-2 text-xs text-muted">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
-        Aún no incluimos videos con licencia verificada. Si tienes dudas sobre la técnica, pide a un entrenador certificado que revise tu ejecución.
+        Las ilustraciones son una referencia visual del movimiento. Si tienes dudas sobre la técnica, pide a un entrenador certificado que revise tu ejecución.
       </p>
     </div>
   );
