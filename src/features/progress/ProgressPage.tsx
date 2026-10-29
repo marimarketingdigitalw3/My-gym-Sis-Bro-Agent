@@ -18,8 +18,9 @@ import { errorMessage, useAsync } from "@/lib/useAsync";
 import { addMeasurement, deleteMeasurement, deletePhoto, listMeasurements, listPhotos, photoUrl, uploadPhoto } from "@/services/tracking";
 import { allSets, listSessions } from "@/services/workouts";
 import type { MeasurementRow, ProgressPhotoRow } from "@/types/db";
+import { ProgressSummary } from "./ProgressSummary";
 
-type TabKey = "body" | "strength" | "consistency" | "photos";
+type TabKey = "summary" | "body" | "strength" | "consistency" | "photos";
 type Range = "30" | "90" | "365" | "all";
 const RANGES: { value: Range; label: string }[] = [{ value: "30", label: "30 días" }, { value: "90", label: "3 meses" }, { value: "365", label: "1 año" }, { value: "all", label: "Todo" }];
 
@@ -35,7 +36,7 @@ const METRICS = [
 type MetricKey = (typeof METRICS)[number]["key"];
 
 export default function ProgressPage() {
-  const [tab, setTab] = useState<TabKey>("body");
+  const [tab, setTab] = useState<TabKey>("summary");
   const [range, setRange] = useState<Range>("90");
   const today = todayISO();
   const from = range === "all" ? "0000-01-01" : addDays(today, -Number(range));
@@ -43,13 +44,14 @@ export default function ProgressPage() {
     <div>
       <PageHeader title="Progreso" subtitle="El peso es solo una métrica. También cuentan tu fuerza, tu constancia y cómo te sientes." />
       <div className="mb-3"><Tabs label="Tipos de progreso" value={tab} onChange={setTab} items={[
-        { value: "body", label: "Cuerpo" }, { value: "strength", label: "Fuerza" }, { value: "consistency", label: "Constancia" }, { value: "photos", label: "Fotos" },
+        { value: "summary", label: "Resumen" }, { value: "body", label: "Cuerpo" }, { value: "strength", label: "Fuerza" }, { value: "consistency", label: "Constancia" }, { value: "photos", label: "Fotos" },
       ]} /></div>
-      {tab !== "photos" && (
+      {tab !== "photos" && tab !== "summary" && (
         <div className="mb-5 flex flex-wrap gap-2" aria-label="Rango de fechas">
           {RANGES.map((r) => <Chip key={r.value} selected={range === r.value} onClick={() => setRange(r.value)}>{r.label}</Chip>)}
         </div>
       )}
+      {tab === "summary" && <ProgressSummary />}
       {tab === "body" && <BodyTab from={from} />}
       {tab === "strength" && <StrengthTab from={from} />}
       {tab === "consistency" && <ConsistencyTab from={from} />}

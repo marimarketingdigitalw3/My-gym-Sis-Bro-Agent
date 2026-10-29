@@ -1,5 +1,7 @@
 // Guía visual y escrita de un ejercicio: animación de referencia (mujer u hombre), pasos y errores comunes.
+import { useState } from "react";
 import { useBundle } from "@/app/providers";
+import { Chip } from "@/components/ui";
 import { EXERCISE_BY_ID } from "@/data/exercises";
 import { demoVariant, ExerciseDemo } from "./ExerciseDemo";
 
@@ -9,13 +11,20 @@ export function useDemoVariant() {
 }
 
 export function ExerciseGuide({ exerciseId, compact = false }: { exerciseId: string; compact?: boolean }) {
-  const variant = useDemoVariant();
+  const profileVariant = useDemoVariant();
+  const [variant, setVariant] = useState(profileVariant);
   const ex = EXERCISE_BY_ID[exerciseId];
   if (!ex) return null;
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-      <div className="shrink-0 self-center rounded-3xl bg-surface-2/70 p-2 sm:self-start">
-        <ExerciseDemo exercise={ex} variant={variant} size={compact ? 120 : 150} />
+      <div className="flex shrink-0 flex-col items-center gap-2 self-center sm:self-start">
+        <div className="rounded-3xl bg-surface-2/70 p-2">
+          <ExerciseDemo exercise={ex} variant={variant} size={compact ? 130 : 160} />
+        </div>
+        <div className="flex gap-1.5" role="group" aria-label="Ver la animación con">
+          <Chip selected={variant === "female"} onClick={() => setVariant("female")}>Mujer</Chip>
+          <Chip selected={variant === "male"} onClick={() => setVariant("male")}>Hombre</Chip>
+        </div>
       </div>
       <div className="min-w-0 text-sm">
         <p className="font-semibold">Cómo hacerlo</p>

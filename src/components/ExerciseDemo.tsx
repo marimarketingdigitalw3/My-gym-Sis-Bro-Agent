@@ -1,7 +1,7 @@
 // Animación de referencia de un ejercicio: una figura de perfil (mujer u hombre) pasa de la posición
 // inicial a la final según el patrón de movimiento. Es una guía visual; los pasos escritos mandan.
 import { useEffect, useState } from "react";
-import type { Equipment, Exercise, MovementPattern } from "@/types/domain";
+import type { Exercise, MovementPattern } from "@/types/domain";
 
 type P = [number, number];
 interface Pose {
@@ -107,14 +107,7 @@ function poseKey(ex: Pick<Exercise, "pattern" | "equipment" | "id">): string {
   return POSES[p] ? p : "stretch";
 }
 
-const pts = (...ps: P[]) => ps.map((q) => q.join(",")).join(" ");
-const limb = (a: Pose) => ({
-  torso: pts(a.neck, a.hip),
-  legN: pts(a.hip, a.knee, a.ankle, a.toe),
-  legF: pts(a.hip, a.kneeF ?? a.knee, a.ankleF ?? a.ankle, a.toeF ?? a.toe),
-  armN: pts(a.neck, a.elbow, a.wrist),
-  armF: pts(a.neck, a.elbowF ?? a.elbow, a.wristF ?? a.wrist),
-});
+const KEY_SPLINES = ".45 0 .55 1;.45 0 .55 1";
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -129,77 +122,205 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-function Equip({ kind }: { kind: Equipment | null }) {
-  if (kind === "barbell") return <g><rect x={-3} y={-14} width={6} height={28} rx={2} /><circle r={11} fillOpacity={0.35} /></g>;
-  if (kind === "dumbbells") return <rect x={-8} y={-4} width={16} height={8} rx={3} />;
-  if (kind === "kettlebells") return <g><circle cy={9} r={7} /><path d="M-4 3 Q0 -3 4 3" fill="none" strokeWidth={2} stroke="currentColor" /></g>;
-  return null;
+// ---------- Geometría ----------
+const add = (p: P, q: P): P => [p[0] + q[0], p[1] + q[1]];
+const lerp = (p: P, q: P, t: number): P => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+const round = (p: P): P => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10];
+
+/** Puntos derivados de una pose: hombro, cintura, pecho y orientación de la cabeza. */
+function rig(a: Pose) {
+  const shoulder = add(a.neck, [0, 3]);
+  const v: P = [a.hip[0] - shoulder[0], a.hip[1] - shoulder[1]];
+  const len = Math.hypot(v[0], v[1]) || 1;
+  const front: P = [v[1] / len, -v[0] / len]; // perpendicular hacia el frente de la figura
+  const chest = add(lerp(shoulder, a.hip, 0.3), [front[0] * 7, front[1] * 7]);
+  const waist = lerp(shoulder, a.hip, 0.62);
+  const headAngle = (Math.atan2(a.head[1] - a.neck[1], a.head[0] - a.neck[0]) * 180) / Math.PI + 90;
+  return {
+    ...a, shoulder, chest: round(chest), waist: round(waist), headAngle: Math.round(headAngle),
+    kneeF: a.kneeF ?? a.knee, ankleF: a.ankleF ?? a.ankle, toeF: a.toeF ?? a.toe,
+    elbowF: a.elbowF ?? a.elbow, wristF: a.wristF ?? a.wrist,
+  };
 }
+type Rig = ReturnType<typeof rig>;
+type Joint = Exclude<keyof Rig, "headAngle">;
+
+interface Palette { skin: string; skinFar: string; top: string; topFar: string; bottom: string; bottomFar: string; hair: string; shoe: string; shoeFar: string; accent: string }
+const PALETTES: Record<"female" | "male", Palette> = {
+  female: { skin: "#E9B897", skinFar: "#D09A78", top: "#E2557B", topFar: "#C2405F", bottom: "#2E2A3A", bottomFar: "#4A4459", hair: "#4A2E22", shoe: "#F3F4F6", shoeFar: "#C9CCD3", accent: "#FFD23F" },
+  male: { skin: "#C98E6A", skinFar: "#AE7553", top: "#2F6FDB", topFar: "#2459B5", bottom: "#1F2430", bottomFar: "#3A4150", hair: "#2B201B", shoe: "#F3F4F6", shoeFar: "#C9CCD3", accent: "#35D68A" },
+};
 
 /**
- * `variant`: "female" dibuja una figura con coleta; "male", una figura con hombros más anchos y cabello corto.
+ * `variant`: "female" dibuja una mujer (top deportivo, leggings y coleta); "male", un hombre
+ * (camiseta sin mangas, pantaloneta y cabello corto). Vista lateral, animada entre la posición inicial y la final.
  */
 export function ExerciseDemo({ exercise, variant, className, size = 160 }: {
   exercise: Pick<Exercise, "pattern" | "equipment" | "id" | "name">; variant: "female" | "male"; className?: string; size?: number;
 }) {
   const reduced = usePrefersReducedMotion();
-  const [a, b] = POSES[poseKey(exercise)];
-  const la = limb(a);
-  const lb = limb(b);
-  const kind = (["barbell", "dumbbells", "kettlebells"] as const).find((k) => exercise.equipment.includes(k)) ?? null;
+  const key = poseKey(exercise);
+  const [pa, pb] = POSES[key];
+  const A = rig(pa);
+  const B = rig(pb);
   const female = variant === "female";
-  const dur = poseKey(exercise) === "run" || poseKey(exercise) === "walk" ? "1.2s" : "2.6s";
-  const anim = (attr: string, from: string, to: string) => reduced ? null : (
-    <animate attributeName={attr} dur={dur} repeatCount="indefinite" values={`${from};${to};${from}`} keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" />
+  const c = PALETTES[variant];
+  const dur = key === "run" || key === "walk" ? "1.1s" : "2.8s";
+  const kind = (["barbell", "dumbbells", "kettlebells"] as const).find((k) => exercise.equipment.includes(k)) ?? null;
+
+  const anim = (attr: string, from: number, to: number) => reduced || from === to ? null : (
+    <animate attributeName={attr} dur={dur} repeatCount="indefinite" values={`${from};${to};${from}`} keyTimes="0;0.5;1" calcMode="spline" keySplines={KEY_SPLINES} />
   );
-  const move = (from: P, to: P) => reduced ? null : (
+  const moveTo = (from: P, to: P) => reduced ? null : (
     <animateTransform attributeName="transform" type="translate" dur={dur} repeatCount="indefinite"
-      values={`${from.join(" ")};${to.join(" ")};${from.join(" ")}`} keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" />
+      values={`${from.join(" ")};${to.join(" ")};${from.join(" ")}`} keyTimes="0;0.5;1" calcMode="spline" keySplines={KEY_SPLINES} />
   );
-  const line = (key: keyof ReturnType<typeof limb>, width: number, opacity = 1) => (
-    <polyline points={la[key]} fill="none" stroke="currentColor" strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" opacity={opacity}>
-      {anim("points", la[key], lb[key])}
-    </polyline>
-  );
-  const torsoW = female ? 13 : 16;
-  const limbW = female ? 8 : 9.5;
+  /** Segmento redondeado entre dos articulaciones (miembro con volumen). */
+  const seg = (p: Joint, q: Joint, w: number, color: string) => {
+    const [x1, y1] = A[p] as P; const [x2, y2] = A[q] as P;
+    const [bx1, by1] = B[p] as P; const [bx2, by2] = B[q] as P;
+    return (
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={w} strokeLinecap="round">
+        {anim("x1", x1, bx1)}{anim("y1", y1, by1)}{anim("x2", x2, bx2)}{anim("y2", y2, by2)}
+      </line>
+    );
+  };
+  const dot = (p: Joint, r: number, color: string) => {
+    const [x, y] = A[p] as P; const [bx, by] = B[p] as P;
+    return <circle cx={x} cy={y} r={r} fill={color}>{anim("cx", x, bx)}{anim("cy", y, by)}</circle>;
+  };
+
+  const torsoW = female ? 21 : 25;
+  const thighW = female ? 15 : 16;
+  const shinW = female ? 11 : 12;
+  const upperArmW = female ? 8.5 : 10.5;
+  const foreArmW = female ? 7.5 : 9;
   const pullBar = exercise.pattern === "vertical_pull";
-  const bench = poseKey(exercise) === "bench_press" || poseKey(exercise) === "hip_extension";
+  const benchKind = key === "bench_press" ? "bench" : key === "hip_extension" ? "box" : null;
+  const shadowX = (A.hip[0] + A.ankle[0]) / 2;
+
+  // Piernas: leggings completas en ella; pantaloneta y pierna descubierta en él.
+  const leg = (far: boolean) => {
+    const sfx = far ? "F" : "";
+    const knee = `knee${sfx}` as Joint; const ankle = `ankle${sfx}` as Joint; const toe = `toe${sfx}` as Joint;
+    return (
+      <g>
+        {seg("hip", knee, thighW, far ? c.bottomFar : c.bottom)}
+        {seg(knee, ankle, shinW, female ? (far ? c.bottomFar : c.bottom) : (far ? c.skinFar : c.skin))}
+        {!female && seg("hip", knee, thighW + 1, far ? c.bottomFar : c.bottom)}
+        {seg(ankle, toe, 9, far ? c.shoeFar : c.shoe)}
+      </g>
+    );
+  };
+  const arm = (far: boolean) => {
+    const sfx = far ? "F" : "";
+    const elbow = `elbow${sfx}` as Joint; const wrist = `wrist${sfx}` as Joint;
+    return (
+      <g>
+        {seg("shoulder", elbow, upperArmW, far ? c.skinFar : c.skin)}
+        {seg(elbow, wrist, foreArmW, far ? c.skinFar : c.skin)}
+        {dot(wrist, foreArmW / 2 + 1, far ? c.skinFar : c.skin)}
+      </g>
+    );
+  };
 
   return (
     <svg viewBox="0 0 200 200" width={size} height={size} className={className} role="img"
       aria-label={`Animación de referencia: ${female ? "mujer" : "hombre"} haciendo ${exercise.name}`}>
-      <line x1="10" y1="186" x2="190" y2="186" stroke="currentColor" strokeOpacity={0.18} strokeWidth={3} strokeLinecap="round" />
-      {pullBar && <line x1="70" y1="12" x2="130" y2="12" stroke="currentColor" strokeOpacity={0.5} strokeWidth={4} strokeLinecap="round" />}
-      {bench && <rect x={poseKey(exercise) === "bench_press" ? 30 : 20} y={poseKey(exercise) === "bench_press" ? 152 : 156} width={poseKey(exercise) === "bench_press" ? 100 : 40} height={8} rx={4} fill="currentColor" opacity={0.18} />}
-      <g className="text-text">
-        {line("legF", limbW, 0.4)}
-        {line("armF", limbW - 1.5, 0.4)}
-        {line("torso", torsoW)}
-        {line("legN", limbW)}
-        <g transform={`translate(${a.head.join(" ")})`}>
-          {move(a.head, b.head)}
+      {/* Escenario */}
+      <ellipse cx={shadowX} cy={188} rx={46} ry={5} fill="#000" opacity={0.12} />
+      <line x1="8" y1="187" x2="192" y2="187" stroke="currentColor" strokeOpacity={0.15} strokeWidth={2} strokeLinecap="round" />
+      {pullBar && (
+        <g stroke="#6B7280" strokeLinecap="round">
+          <line x1="64" y1="12" x2="136" y2="12" strokeWidth={5} />
+          <line x1="66" y1="12" x2="66" y2="186" strokeWidth={4} opacity={0.35} />
+          <line x1="134" y1="12" x2="134" y2="186" strokeWidth={4} opacity={0.35} />
+        </g>
+      )}
+      {benchKind === "bench" && (
+        <g fill="#6B7280">
+          <rect x={26} y={150} width={104} height={10} rx={4} />
+          <rect x={40} y={160} width={6} height={26} rx={2} opacity={0.7} />
+          <rect x={110} y={160} width={6} height={26} rx={2} opacity={0.7} />
+        </g>
+      )}
+      {benchKind === "box" && <rect x={14} y={154} width={46} height={32} rx={6} fill="#6B7280" opacity={0.85} />}
+
+      {/* Lado lejano */}
+      {leg(true)}
+      {arm(true)}
+
+      {/* Tronco: top deportivo o camiseta; abdomen descubierto en el top de ella */}
+      {female ? (
+        <>
+          {seg("waist", "hip", torsoW - 3, c.skin)}
+          {seg("shoulder", "waist", torsoW, c.top)}
+          {dot("chest", 7.5, c.top)}
+          {dot("hip", torsoW / 2 + 0.5, c.bottom)}
+        </>
+      ) : (
+        <>
+          {seg("shoulder", "hip", torsoW, c.top)}
+          {dot("hip", torsoW / 2 + 0.5, c.bottom)}
+        </>
+      )}
+      {seg("neck", "shoulder", 8, c.skin)}
+
+      {/* Lado cercano */}
+      {leg(false)}
+
+      {/* Cabeza: gira con la postura */}
+      <g transform={`translate(${A.head.join(" ")})`}>
+        {moveTo(A.head, B.head)}
+        <g transform={`rotate(${A.headAngle})`}>
+          {!reduced && A.headAngle !== B.headAngle && (
+            <animateTransform attributeName="transform" type="rotate" dur={dur} repeatCount="indefinite"
+              values={`${A.headAngle};${B.headAngle};${A.headAngle}`} keyTimes="0;0.5;1" calcMode="spline" keySplines={KEY_SPLINES} />
+          )}
+          {female && <path d="M-9 -7 Q-24 -6 -23 12 Q-19 5 -10 2 Z" fill={c.hair} />}
+          <circle r={11.5} fill={c.skin} />
           {female ? (
             <>
-              <path d="M-9 -6 Q-22 -4 -24 12 Q-16 6 -10 4 Z" fill="rgb(var(--primary-strong))" />
-              <circle r={11} fill="currentColor" />
-              <path d="M-11 -2 Q-8 -14 4 -12 Q10 -10 11 -4 Q2 -8 -11 -2 Z" fill="rgb(var(--primary-strong))" />
+              <path d="M-11.5 1 Q-13 -13 1 -13 Q11 -12.5 11.5 -3 Q4 -8 -3 -7 Q-8 -4 -11.5 1 Z" fill={c.hair} />
+              <circle cx={-10.5} cy={-5} r={2.6} fill={c.accent} />
             </>
           ) : (
-            <>
-              <circle r={12} fill="currentColor" />
-              <path d="M-12 -2 Q-10 -15 2 -14 Q11 -12 12 -5 Q0 -9 -12 -2 Z" fill="rgb(var(--primary-strong))" />
-            </>
+            <path d="M-11.5 0 Q-12.5 -14 1 -13.5 Q11.5 -12.5 11.5 -4 Q2 -8.5 -11.5 0 Z" fill={c.hair} />
+          )}
+          <circle cx={-2} cy={1} r={2.6} fill={c.skinFar} />
+          <circle cx={6.5} cy={-1.5} r={1.4} fill="#1B1512" />
+          <path d="M5 5 Q7.5 6.5 9.5 5" fill="none" stroke="#9A5B47" strokeWidth={1.2} strokeLinecap="round" />
+        </g>
+      </g>
+
+      {arm(false)}
+
+      {/* Equipo en la mano cercana */}
+      {kind && (
+        <g transform={`translate(${A.wrist.join(" ")})`}>
+          {moveTo(A.wrist as P, B.wrist as P)}
+          {kind === "barbell" && (
+            <g>
+              <circle r={15} fill="#374151" />
+              <circle r={10} fill="none" stroke="#6B7280" strokeWidth={2} />
+              <circle r={3} fill="#D1D5DB" />
+            </g>
+          )}
+          {kind === "dumbbells" && (
+            <g>
+              <rect x={-9} y={-3} width={18} height={6} rx={2} fill="#9CA3AF" />
+              <rect x={-11} y={-7} width={6} height={14} rx={2} fill="#374151" />
+              <rect x={5} y={-7} width={6} height={14} rx={2} fill="#374151" />
+            </g>
+          )}
+          {kind === "kettlebells" && (
+            <g>
+              <path d="M-5 0 Q0 -8 5 0" fill="none" stroke="#374151" strokeWidth={3} />
+              <circle cy={8} r={8} fill="#374151" />
+            </g>
           )}
         </g>
-        {line("armN", limbW - 0.5)}
-        {kind && (
-          <g transform={`translate(${a.wrist.join(" ")})`} fill="rgb(var(--primary-strong))" className="text-primary-strong">
-            {move(a.wrist, b.wrist)}
-            <Equip kind={kind} />
-          </g>
-        )}
-      </g>
+      )}
     </svg>
   );
 }

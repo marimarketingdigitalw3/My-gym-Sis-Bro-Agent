@@ -239,7 +239,14 @@ await test("nutrición: plan semanal, sustitución, comida marcada, registro man
 
 await test("progreso: medidas con gráfico real, fuerza y constancia", async () => {
   const { page } = mar;
+  // Inicio queda simple: racha y semana están en Progreso, nutrición e hidratación en Nutrición.
+  await page.goto(`${BASE}/`);
+  await page.getByText("Tu racha, tu semana y tus récords").waitFor();
+  assert(!(await page.getByText("Nutrición de hoy").count()) && !(await page.getByText("Hidratación").count()), "Inicio sigue mostrando nutrición o hidratación");
   await page.goto(`${BASE}/progress`);
+  await page.getByText("Racha activa").waitFor();
+  await page.getByText("Tu semana", { exact: true }).waitFor();
+  await page.getByRole("tab", { name: "Cuerpo" }).click();
   await page.getByText("Sin registros en este periodo").waitFor();
   for (const [date, w] of [[daysAgo(14), "63.5"], [daysAgo(7), "63.1"], [daysAgo(0), "62.8"]]) {
     await page.getByRole("button", { name: "Registrar medidas" }).click();
@@ -325,6 +332,7 @@ await test("intermedio en gimnasio con limitación de rodilla y sin ciclo (escri
   await page.screenshot({ path: `${SHOTS}10-workouts-bro-desktop.png`, fullPage: true });
   // Aislamiento de datos: Andrés no ve datos de Mar.
   await page.goto(`${BASE}/progress`);
+  await page.getByRole("tab", { name: "Cuerpo" }).click();
   await page.getByText("Sin registros en este periodo").waitFor();
   await page.goto(`${BASE}/coach`);
   assert(!(await page.getByText("¿Qué entreno hoy?").locator("xpath=ancestor::aside").count()), "aparecen conversaciones ajenas");
