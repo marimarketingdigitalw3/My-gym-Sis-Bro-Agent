@@ -51,3 +51,7 @@ Para el modo completo con Supabase y la IA, sigue [`docs/03-guia-tecnica.md`](do
 - [`docs/01-ingenieria-inversa.md`](docs/01-ingenieria-inversa.md) y [`docs/02-producto-combinado.md`](docs/02-producto-combinado.md): análisis inicial de producto.
 
 > My Gym/Sis no es una herramienta de diagnóstico médico ni sustituye a profesionales de la salud, la nutrición o el entrenamiento.
+
+## Créditos
+
+- Exercise data by [RepDB (repdb.co)](https://repdb.co): ilustraciones de los ejercicios (licencia free tier, uso en app con atribución).

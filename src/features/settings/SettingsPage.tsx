@@ -294,6 +294,9 @@ function FeaturesSection() {
         <Toggle label="Compartir mi contexto con Gym AI Coach" description="Objetivos, plan, equipo, zonas a cuidar y progreso (sin notas médicas, peso exacto ni fotos). Si lo desactivas, el coach responde de forma general."
           checked={settings.ai_share_context} onChange={(v) => run(() => updateSettings({ ai_share_context: v }))} />
       </div>
+      <p className="mt-4 border-t border-border pt-3 text-xs text-muted">
+        Créditos: ilustraciones de ejercicios por <a href="https://repdb.co" target="_blank" rel="nofollow noreferrer" className="underline">Exercise data by RepDB (repdb.co)</a>.
+      </p>
     </Section>
   );
 }

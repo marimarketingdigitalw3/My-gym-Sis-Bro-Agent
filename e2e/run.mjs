@@ -349,7 +349,7 @@ await test("intermedio en gimnasio con limitación de rodilla y sin ciclo (escri
   assert((await page.getByText("7:00 a. m.").count()) >= 4, "la hora nueva no se aplicó a todos los días");
 
   await page.getByRole("button", { name: "Cómo se hace" }).first().click();
-  await page.getByRole("img", { name: /Animación de referencia: hombre/ }).first().waitFor();
+  await page.getByRole("img", { name: /Ilustración de|Animación de referencia/ }).first().waitFor();
 
   // Gym Bro: horario de comidas y suplementos.
   await page.goto(`${BASE}/nutrition`);
@@ -425,7 +425,8 @@ await test("entrenos: mover días, crear rutina, añadir por músculo, reordenar
   await page.getByText("Tu semana de entrenamiento").waitFor();
   // Guía visual con figura de mujer.
   await page.getByRole("button", { name: "Cómo se hace" }).first().click();
-  await page.getByRole("img", { name: /Animación de referencia: mujer/ }).first().waitFor();
+  await page.getByRole("img", { name: /Ilustración de|Animación de referencia/ }).first().waitFor();
+  await page.getByText("Exercise data by RepDB").first().waitFor();
   // Mover la rutina seleccionada a otro día (intercambia si está ocupado).
   const moveSelect = page.getByLabel("Mover a");
   const current = await moveSelect.inputValue();
@@ -463,7 +464,8 @@ await test("entrenos: mover días, crear rutina, añadir por músculo, reordenar
   // Detalle del ejercicio con animación.
   await page.locator("ol li a[href^='/exercises/']").first().click();
   await page.getByText("Así se hace").waitFor();
-  await page.getByRole("img", { name: /Animación de referencia: mujer/ }).waitFor();
+  await page.getByRole("img", { name: /Ilustración de|Animación de referencia/ }).first().waitFor();
+  await page.getByRole("link", { name: "RepDB" }).first().waitFor();
 });
 
 await test("borrar datos de ciclo y borrar cuenta", async () => {

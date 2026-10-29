@@ -2,7 +2,7 @@ import { ArrowLeft, Info } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useBundle } from "@/app/providers";
 import { MuscleMap } from "@/components/MuscleMap";
-import { ExerciseDemo } from "@/components/ExerciseDemo";
+import { ExerciseMedia } from "@/components/ExerciseMedia";
 import { useDemoVariant } from "@/components/ExerciseGuide";
 import { Badge, Button, Card, CardHeader, EmptyState, Notice } from "@/components/ui";
 import { EXERCISE_BY_ID } from "@/data/exercises";
@@ -52,10 +52,10 @@ export default function ExerciseDetailPage() {
         <Card className="lg:col-span-2">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div className="shrink-0 rounded-3xl bg-surface-2/70 p-3">
-              <ExerciseDemo exercise={ex} variant={variant} size={200} />
+              <ExerciseMedia exerciseId={ex.id} size={220} fallbackVariant={variant} />
             </div>
             <div className="min-w-0">
-              <CardHeader title="Así se hace" subtitle="Animación de referencia del movimiento." />
+              <CardHeader title="Así se hace" subtitle="Posición inicial y final del movimiento." />
               <ol className="list-decimal space-y-2 pl-5 text-[15px]">{ex.instructions.map((s) => <li key={s}>{s}</li>)}</ol>
             </div>
           </div>
