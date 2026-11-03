@@ -31,6 +31,8 @@ export interface AuthService {
   updatePassword(newPassword: string): Promise<void>;
 }
 
+export type PhotoBucket = "progress-photos" | "chat-attachments";
+
 export interface CoachResponse {
   conversationId: string;
   message: ChatMessageRow;
@@ -52,10 +54,10 @@ export interface DataClient {
   upsert<K extends TableName>(table: K, rows: Partial<Row<K>>[], onConflict: (keyof Row<K>)[]): Promise<Row<K>[]>;
   update<K extends TableName>(table: K, match: Partial<Row<K>>, patch: Partial<Row<K>>): Promise<Row<K>[]>;
   remove<K extends TableName>(table: K, match: Partial<Row<K>>): Promise<void>;
-  uploadPhoto(path: string, file: File): Promise<void>;
-  photoUrl(path: string): Promise<string>;
-  removePhotos(paths: string[]): Promise<void>;
-  sendCoachMessage(conversationId: string | null, message: string): Promise<CoachResponse>;
+  uploadPhoto(path: string, file: File, bucket?: PhotoBucket): Promise<void>;
+  photoUrl(path: string, bucket?: PhotoBucket): Promise<string>;
+  removePhotos(paths: string[], bucket?: PhotoBucket): Promise<void>;
+  sendCoachMessage(conversationId: string | null, message: string, attachments?: string[]): Promise<CoachResponse>;
   deleteAccount(): Promise<void>;
 }
 

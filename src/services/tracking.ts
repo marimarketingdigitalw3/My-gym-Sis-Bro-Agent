@@ -1,5 +1,7 @@
 // Nutrición, agua, progreso, bienestar, ciclo y coach.
 import { db } from "./data";
+import { compressImage } from "@/lib/images";
+import type { StoredAction } from "../../supabase/functions/_shared/coachActions.ts";
 import type {
   CycleLogRow, MealLogRow, MealPlanDay, MealPlanRow, MeasurementRow, RecoveryLogRow,
 } from "@/types/db";
@@ -141,4 +143,19 @@ export async function deleteConversation(id: string) {
   await db.remove("chat_conversations", { id });
 }
 
-export const sendCoachMessage = (conversationId: string | null, message: string) => db.sendCoachMessage(conversationId, message);
+export const sendCoachMessage = (conversationId: string | null, message: string, attachments: string[] = []) => db.sendCoachMessage(conversationId, message, attachments);
+
+/** Sube una foto para el coach (reducida en el navegador) y devuelve su ruta en el bucket privado. */
+export async function uploadChatImage(userId: string, file: File): Promise<string> {
+  const small = await compressImage(file);
+  const path = `${userId}/chat/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  await db.uploadPhoto(path, small, "chat-attachments");
+  return path;
+}
+
+export const chatImageUrl = (path: string) => db.photoUrl(path, "chat-attachments");
+
+/** Guarda el estado de las acciones (aplicadas o no) de un mensaje del coach. */
+export async function saveMessageActions(messageId: string, actions: StoredAction[]) {
+  await db.update("chat_messages", { id: messageId }, { actions });
+}

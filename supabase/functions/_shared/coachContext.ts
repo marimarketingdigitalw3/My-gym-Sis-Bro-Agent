@@ -1,4 +1,4 @@
-// Construye el contexto mínimo del coach a partir de filas de la base de datos.
+// Construye el contexto del coach a partir de filas de la base de datos.
 // Formas mínimas declaradas aquí para no depender de los tipos de la app (Deno no resuelve alias "@/").
 import type { CoachContext, CoachLanguage } from "./coach.ts";
 
@@ -10,11 +10,11 @@ interface OnboardingLike {
   health?: { limitations?: string[] };
 }
 interface GoalLike { goal: string; priority: number; status: string }
-interface PlanLike { id: string; days_per_week: number; schedule: { dayIndex: number; weekday: number; title: string }[] }
+interface PlanLike { id: string; days_per_week: number; schedule: { dayIndex: number; weekday: number; title: string; time?: string }[] }
 interface PlanExerciseLike { day_index: number; position: number; exercise_id: string }
 interface SessionLike { started_at: string; title: string; status: string }
 interface SetLike { exercise_id: string; weight_kg: number | null; reps: number | null; completed: boolean }
-interface NutritionLike { diet: string; allergens: string[] }
+interface NutritionLike { diet: string; allergens: string[]; meals_per_day?: number; supplements?: string[]; wake_time?: string | null; sleep_time?: string | null }
 interface CycleLogLike { symptoms: string[]; energy: number | null }
 
 export interface CoachContextInput {
@@ -38,24 +38,26 @@ export function buildCoachContext(input: CoachContextInput): CoachContext {
   const language: CoachLanguage = input.profile.language === "en" ? "en" : "es";
   const firstName = (input.profile.display_name || "").split(" ")[0].slice(0, 30);
 
-  // Sin permiso para compartir contexto, solo enviamos el idioma.
+  // Sin permiso para compartir contexto, solo enviamos el idioma y el día.
   if (!input.settings.ai_share_context) {
     return {
-      firstName: "", language, level: null, goals: [], equipment: [], limitations: [], todayWorkout: null,
-      recentSessions: [], personalRecords: [], missedSessionsThisWeek: null, nutrition: null, cycleToday: null,
+      firstName: "", language, level: null, goals: [], equipment: [], limitations: [], todayWeekday: input.todayWeekday, todayWorkout: null,
+      weekSchedule: [], recentSessions: [], personalRecords: [], missedSessionsThisWeek: null, nutrition: null, supplements: [],
+      rhythm: { wakeTime: null, sleepTime: null }, cycleToday: null,
     };
   }
 
+  const exercisesOf = (dayIndex: number) => input.planExercises
+    .filter((e) => e.day_index === dayIndex)
+    .sort((a, b) => a.position - b.position)
+    .map((e) => ({ id: e.exercise_id, name: input.exerciseName(e.exercise_id) }));
+
   const day = input.plan?.schedule.find((d) => d.weekday === input.todayWeekday) ?? null;
-  const todayWorkout = day
-    ? {
-      title: day.title,
-      exercises: input.planExercises
-        .filter((e) => e.day_index === day.dayIndex)
-        .sort((a, b) => a.position - b.position)
-        .map((e) => input.exerciseName(e.exercise_id)),
-    }
-    : null;
+  const todayWorkout = day ? { title: day.title, exercises: exercisesOf(day.dayIndex).map((e) => e.name) } : null;
+  const weekSchedule = (input.plan?.schedule ?? [])
+    .slice()
+    .sort((a, b) => a.weekday - b.weekday)
+    .map((d) => ({ weekday: d.weekday, title: d.title, time: d.time ?? null, exercises: exercisesOf(d.dayIndex) }));
 
   const completed = input.recentSessions.filter((s) => s.status === "completed");
   const completedThisWeek = completed.filter((s) => s.started_at.slice(0, 10) >= input.weekStartISO).length;
@@ -75,11 +77,17 @@ export function buildCoachContext(input: CoachContextInput): CoachContext {
     goals: input.goals.filter((g) => g.status === "active").sort((a, b) => a.priority - b.priority).map((g) => g.goal),
     equipment: input.onboarding?.environment?.equipment ?? [],
     limitations: input.onboarding?.health?.limitations ?? [],
+    todayWeekday: input.todayWeekday,
     todayWorkout,
+    weekSchedule,
     recentSessions: completed.slice(0, 5).map((s) => ({ date: s.started_at.slice(0, 10), title: s.title })),
     personalRecords: [...best.values()].slice(0, 5),
     missedSessionsThisWeek: input.plan ? Math.max(0, plannedSoFar - completedThisWeek) : null,
-    nutrition: input.nutrition ? { diet: input.nutrition.diet, allergens: input.nutrition.allergens, proteinTargetG: input.proteinTargetG } : null,
+    nutrition: input.nutrition
+      ? { diet: input.nutrition.diet, allergens: input.nutrition.allergens, proteinTargetG: input.proteinTargetG, mealsPerDay: input.nutrition.meals_per_day ?? null }
+      : null,
+    supplements: input.nutrition?.supplements ?? [],
+    rhythm: { wakeTime: input.nutrition?.wake_time ?? null, sleepTime: input.nutrition?.sleep_time ?? null },
     cycleToday: input.settings.cycle_tracking_enabled && input.cycleToday
       ? { symptoms: input.cycleToday.symptoms, energy: input.cycleToday.energy }
       : null,

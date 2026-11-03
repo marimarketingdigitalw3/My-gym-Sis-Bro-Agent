@@ -1,9 +1,9 @@
 // Implementación real sobre Supabase (Auth, PostgreSQL con RLS, Storage y Edge Functions).
 import { createClient, FunctionsHttpError, type SupabaseClient } from "@supabase/supabase-js";
 import type { TableName } from "@/types/db";
-import { DataError, type AuthService, type CoachResponse, type DataClient, type QueryOptions, type Row } from "./types";
+import { DataError, type AuthService, type CoachResponse, type DataClient, type PhotoBucket, type QueryOptions, type Row } from "./types";
 
-const PHOTO_BUCKET = "progress-photos";
+const PHOTO_BUCKET: PhotoBucket = "progress-photos";
 
 function fail(error: { message: string; code?: string } | null, fallback: string): never {
   throw new DataError(error?.message || fallback, error?.code);
@@ -116,25 +116,25 @@ export function createSupabaseDataClient(url: string, anonKey: string): DataClie
       if (error) fail(error, "No se pudo borrar.");
     },
 
-    async uploadPhoto(path, file) {
-      const { error } = await sb.storage.from(PHOTO_BUCKET).upload(path, file, { upsert: false, contentType: file.type });
+    async uploadPhoto(path, file, bucket = PHOTO_BUCKET) {
+      const { error } = await sb.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type });
       if (error) fail(error, "No se pudo subir la foto.");
     },
 
-    async photoUrl(path) {
-      const { data, error } = await sb.storage.from(PHOTO_BUCKET).createSignedUrl(path, 60 * 10);
+    async photoUrl(path, bucket = PHOTO_BUCKET) {
+      const { data, error } = await sb.storage.from(bucket).createSignedUrl(path, 60 * 10);
       if (error || !data) fail(error, "No se pudo abrir la foto.");
       return data.signedUrl;
     },
 
-    async removePhotos(paths) {
+    async removePhotos(paths, bucket = PHOTO_BUCKET) {
       if (!paths.length) return;
-      const { error } = await sb.storage.from(PHOTO_BUCKET).remove(paths);
+      const { error } = await sb.storage.from(bucket).remove(paths);
       if (error) fail(error, "No se pudo borrar la foto.");
     },
 
-    async sendCoachMessage(conversationId, message): Promise<CoachResponse> {
-      const { data, error } = await sb.functions.invoke("coach-chat", { body: { conversationId, message } });
+    async sendCoachMessage(conversationId, message, attachments = []): Promise<CoachResponse> {
+      const { data, error } = await sb.functions.invoke("coach-chat", { body: { conversationId, message, attachments } });
       if (error) {
         let detail = "El coach no está disponible en este momento.";
         let status: number | undefined;

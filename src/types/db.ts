@@ -1,4 +1,5 @@
 // Filas de la base de datos. Reflejan supabase/migrations/*.sql (snake_case).
+import type { StoredAction } from "../../supabase/functions/_shared/coachActions.ts";
 import type {
   Allergen, BiologicalSex, BudgetLevel, CuisineStyle, DietPattern, Equipment, FitnessLevel, GoalKey,
   JointArea, Language, MealType, ThemeName, TrainingEnvironment, Units,
@@ -333,6 +334,10 @@ export interface ChatMessageRow {
   role: "user" | "assistant";
   content: string;
   source: "ai" | "fallback" | "safety" | "user";
+  /** Rutas de fotos adjuntas en el bucket chat-attachments. */
+  attachments: string[];
+  /** Acciones propuestas por el coach (ver supabase/functions/_shared/coachActions.ts). */
+  actions: StoredAction[];
   created_at: string;
 }
 

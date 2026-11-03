@@ -165,3 +165,11 @@ El proyecto incluye `vercel.json` (build de Vite, reescritura SPA hacia `index.h
 - **Horario de comidas y déficit** (solo temas Gym Sis y Gym Bro): `lib/mealTiming.ts` calcula la ventana de comidas según objetivo, hora de despertar y de dormir (`nutrition_preferences.wake_time` y `sleep_time`) y el entreno del día. Se desactiva con antecedentes de TCA, embarazo o posparto y en menores de edad.
 - **Suplementos** (solo Gym Sis y Gym Bro): catálogo y horas sugeridas en `lib/mealTiming.ts`; los elegidos se guardan en `nutrition_preferences.supplements` y las tomas diarias en `supplement_logs` (con RLS). Migración: `20261029000001_supplements_and_meal_timing.sql`.
 - **Mascota Gym Bot**: componente web `components/gymbot/gym-bot-mascot.js` (7 ánimos, parpadeo, giro 3D y reacción al tocarla). El ánimo sale de `lib/gymbotMood.ts` según el progreso.
+
+## Gym AI Coach como agente
+
+- **Perspectivas**: entrenamiento, nutrición, suplementación y fisioterapia (prompt en `supabase/functions/_shared/coach.ts`). Siempre responde dentro de los límites de seguridad y deriva a un profesional cuando corresponde.
+- **Fotos**: la app reduce la imagen (`lib/images.ts`), la sube al bucket privado `chat-attachments` (`<uid>/chat/...`) y envía la ruta; la Edge Function la descarga con `service_role` y la pasa al modelo como imagen. Máximo 3 por mensaje.
+- **Acciones**: el modelo usa herramientas (`_shared/coachActions.ts`, `COACH_TOOLS`). Cada llamada se valida (`actionFromTool`) y se guarda en `chat_messages.actions` como propuesta con etiqueta en español. La app las muestra como tarjetas y la persona las aplica (`services/coachActions.ts`), reutilizando los mismos servicios que las pantallas. Sin IA, `parseActionIntents` reconoce órdenes frecuentes.
+- **Contexto**: agenda semanal con horas e ids de ejercicios, suplementos, ritmo del día y catálogo completo (bloque cacheable).
+- **Migración**: `20261103000001_coach_agent.sql` (columnas `attachments` y `actions`, política de actualización propia y bucket).

@@ -1,7 +1,8 @@
 // Modo demo local: sin backend, todo queda en este navegador.
 // Imita las reglas de Supabase (cada consulta se limita al usuario actual) para que la app
 // se comporte igual en ambos modos. No es un sustituto seguro de un servidor.
-import { EXERCISE_BY_ID } from "@/data/exercises";
+import { EXERCISE_BY_ID, EXERCISES } from "@/data/exercises";
+import { describeAction, type StoredAction } from "../../../supabase/functions/_shared/coachActions.ts";
 import { startOfWeek, todayISO, weekdayIndex } from "@/lib/dates";
 import { buildCoachContext } from "../../../supabase/functions/_shared/coachContext.ts";
 import { conversationTitle } from "../../../supabase/functions/_shared/coach.ts";
@@ -253,14 +254,14 @@ export function createLocalDataClient(): DataClient {
       for (const p of paths) if (p.startsWith(`${userId}/`)) await idb<undefined>("readwrite", (s) => s.delete(p));
     },
 
-    async sendCoachMessage(conversationId, message): Promise<CoachResponse> {
+    async sendCoachMessage(conversationId, message, attachments = []): Promise<CoachResponse> {
       const userId = uid();
       let convId = conversationId;
       if (!convId) {
         const [conv] = await client.insert("chat_conversations", [{ title: conversationTitle(message) }]);
         convId = conv.id;
       }
-      await client.insert("chat_messages", [{ conversation_id: convId, role: "user", content: message, source: "user" }]);
+      await client.insert("chat_messages", [{ conversation_id: convId, role: "user", content: message || "(foto)", source: "user", attachments, actions: [] }]);
 
       const db = load();
       const plan = scoped(db, "workout_plans", userId).find((p) => p.is_active) as Row<"workout_plans"> | undefined;
@@ -281,8 +282,12 @@ export function createLocalDataClient(): DataClient {
         weekStartISO: startOfWeek(today),
         exerciseName: (id) => EXERCISE_BY_ID[id]?.name ?? id,
       });
-      const reply = fallbackReply(message, ctx);
-      const [saved] = await client.insert("chat_messages", [{ conversation_id: convId, role: "assistant", content: reply.text, source: reply.source }]);
+      const catalog = EXERCISES.map((e) => ({ id: e.id, name: e.name }));
+      const reply = fallbackReply(message, ctx, catalog);
+      const actions: StoredAction[] = reply.actions.map((action) => ({
+        id: crypto.randomUUID(), action, label: describeAction(action, (id) => EXERCISE_BY_ID[id]?.name ?? id), applied_at: null,
+      }));
+      const [saved] = await client.insert("chat_messages", [{ conversation_id: convId, role: "assistant", content: reply.text, source: reply.source, attachments: [], actions }]);
       await client.update("chat_conversations", { id: convId }, {});
       return {
         conversationId: convId,
