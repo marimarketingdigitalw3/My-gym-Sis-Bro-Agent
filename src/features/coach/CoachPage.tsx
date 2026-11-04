@@ -1,5 +1,5 @@
 import {
-  Apple, ArrowLeft, ArrowUpRight, Camera, Check, Copy, Dumbbell, HeartPulse, History, ImagePlus, Loader2, MessageSquarePlus, Pill, Plus, Send,
+  Apple, ArrowLeft, ArrowUpRight, Camera, Check, Copy, Dumbbell, HeartPulse, History, ImagePlus, Loader2, MessageSquarePlus, Pill, Plus, Send, Video,
   ShieldAlert, Sparkles, Trash2, User, Wand2, X,
 } from "lucide-react";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
@@ -12,10 +12,10 @@ import { errorMessage, useAsync } from "@/lib/useAsync";
 import { GymBotIcon } from "@/components/GymBot";
 import { db } from "@/services/data";
 import { applyCoachAction } from "@/services/coachActions";
-import { chatImageUrl, deleteConversation, listConversations, listMessages, saveMessageActions, sendCoachMessage, uploadChatImage } from "@/services/tracking";
+import { chatImageUrl, deleteConversation, listConversations, listMessages, saveMessageActions, sendCoachMessage, uploadChatAttachment } from "@/services/tracking";
 import type { ChatConversationRow, ChatMessageRow } from "@/types/db";
 import { MAX_MESSAGE_CHARS } from "../../../supabase/functions/_shared/coach.ts";
-import { actionSection, MAX_ATTACHMENTS, parseStoredActions, type StoredAction } from "../../../supabase/functions/_shared/coachActions.ts";
+import { actionSection, isVideoPath, MAX_ATTACHMENTS, MAX_VIDEO_BYTES, parseStoredActions, type StoredAction } from "../../../supabase/functions/_shared/coachActions.ts";
 
 /** Identidad visual del coach: la mascota Gym Bot. */
 function Orb({ size = 36 }: { size?: number }) {
@@ -66,12 +66,17 @@ function SourceBadge({ source }: { source: ChatMessageRow["source"] }) {
   return null;
 }
 
-/** Miniatura de una foto adjunta (URL firmada o local). */
-function ChatImage({ path, size = 96 }: { path: string; size?: number }) {
+/** Miniatura de una foto o un video adjunto (URL firmada o local). */
+function ChatMedia({ path, size = 96 }: { path: string; size?: number }) {
   const { data } = useAsync(() => chatImageUrl(path), [path]);
+  const video = isVideoPath(path);
   return (
-    <span className="block overflow-hidden rounded-2xl bg-surface-2" style={{ width: size, height: size }}>
-      {data ? <img src={data} alt="Foto adjunta" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-muted"><ImagePlus className="h-5 w-5" /></span>}
+    <span className="block overflow-hidden rounded-2xl bg-surface-2" style={{ width: video ? size * 1.6 : size, height: size }}>
+      {data
+        ? video
+          ? <video src={data} controls playsInline preload="metadata" aria-label="Video adjunto" className="h-full w-full object-cover" />
+          : <img src={data} alt="Foto adjunta" className="h-full w-full object-cover" />
+        : <span className="grid h-full w-full place-items-center text-muted">{video ? <Video className="h-5 w-5" /> : <ImagePlus className="h-5 w-5" />}</span>}
     </span>
   );
 }
@@ -137,8 +142,9 @@ export default function CoachPage() {
     if (!files) return;
     const next = [...pending];
     for (const f of Array.from(files)) {
-      if (!f.type.startsWith("image/")) { toast("Solo se pueden adjuntar imágenes.", "error"); continue; }
-      if (next.length >= MAX_ATTACHMENTS) { toast(`Máximo ${MAX_ATTACHMENTS} fotos por mensaje.`, "error"); break; }
+      if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) { toast("Solo se pueden adjuntar fotos o videos.", "error"); continue; }
+      if (f.type.startsWith("video/") && f.size > MAX_VIDEO_BYTES) { toast("El video supera 50 MB. Recórtalo a unos segundos.", "error"); continue; }
+      if (next.length >= MAX_ATTACHMENTS) { toast(`Máximo ${MAX_ATTACHMENTS} adjuntos por mensaje.`, "error"); break; }
       next.push({ file: f, url: URL.createObjectURL(f) });
     }
     setPending(next);
@@ -162,7 +168,7 @@ export default function CoachPage() {
     setMessages((m) => [...m, optimistic]);
     try {
       const attachments: string[] = [];
-      for (const p of files) attachments.push(await uploadChatImage(bundle.profile.id, p.file));
+      for (const p of files) attachments.push(await uploadChatAttachment(bundle.profile.id, p.file));
       setMessages((m) => m.map((x) => (x.id === optimistic.id ? { ...x, attachments } : x)));
       const res = await sendCoachMessage(conversationId, message, attachments);
       setNotice(res.notice);
@@ -240,11 +246,13 @@ export default function CoachPage() {
       {notice && <div className="mb-2"><Notice tone="warning">{notice}</Notice></div>}
       {error && <div className="mb-2"><Notice tone="danger" title="No pudimos enviar tu mensaje">{error}</Notice></div>}
       {pending.length > 0 && (
-        <ul className="mb-2 flex gap-2" aria-label="Fotos por enviar">
+        <ul className="mb-2 flex gap-2" aria-label="Adjuntos por enviar">
           {pending.map((p, i) => (
             <li key={p.url} className="relative">
-              <img src={p.url} alt={`Foto por enviar ${i + 1}`} className="h-16 w-16 rounded-2xl object-cover" />
-              <button type="button" aria-label={`Quitar foto ${i + 1}`} onClick={() => setPending((l) => l.filter((x) => x !== p))}
+              {p.file.type.startsWith("video/")
+                ? <video src={p.url} muted playsInline preload="metadata" aria-label={`Video por enviar ${i + 1}`} className="h-16 w-24 rounded-2xl object-cover" />
+                : <img src={p.url} alt={`Foto por enviar ${i + 1}`} className="h-16 w-16 rounded-2xl object-cover" />}
+              <button type="button" aria-label={`Quitar adjunto ${i + 1}`} onClick={() => setPending((l) => l.filter((x) => x !== p))}
                 className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-text text-surface shadow"><X className="h-3.5 w-3.5" /></button>
             </li>
           ))}
@@ -260,8 +268,8 @@ export default function CoachPage() {
         <div className="mt-1 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <IconButton label="Nueva conversación" onClick={newChat} className="border border-border/70 bg-surface"><Plus className="h-4 w-4" /></IconButton>
-            <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" aria-label="Adjuntar foto" onChange={(e) => addFiles(e.target.files)} />
-            <IconButton label="Adjuntar foto" onClick={() => fileRef.current?.click()} className="border border-border/70 bg-surface"><Camera className="h-4 w-4" /></IconButton>
+            <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="sr-only" aria-label="Adjuntar foto o video" onChange={(e) => addFiles(e.target.files)} />
+            <IconButton label="Adjuntar foto o video" onClick={() => fileRef.current?.click()} className="border border-border/70 bg-surface"><Camera className="h-4 w-4" /></IconButton>
           </div>
           <button type="submit" aria-label="Enviar" disabled={!canSend}
             className="grid h-11 w-11 place-items-center rounded-full bg-primary-strong text-on-primary shadow-md transition disabled:opacity-40">
@@ -373,14 +381,14 @@ export default function CoachPage() {
           <div className="flex flex-col items-center py-10 text-center">
             <Orb size={56} />
             <p className="mt-4 font-semibold">¿En qué te ayudo, {firstName}?</p>
-            <p className="mt-1 max-w-sm text-sm text-muted">Pregunta, adjunta una foto o pídeme un cambio en tu plan. Ante dolor en el pecho, desmayo o falta de aire, busca atención médica.</p>
+            <p className="mt-1 max-w-sm text-sm text-muted">Pregunta, adjunta una foto o un video de tu técnica, o pídeme un cambio en tu plan. Ante dolor en el pecho, desmayo o falta de aire, busca atención médica.</p>
           </div>
         ) : messages.map((m) => (
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end gap-2.5">
               <div className={cx("max-w-[80%] rounded-[1.4rem] rounded-br-md px-4 py-2.5 text-[15px]", glass)}>
                 {m.attachments.length > 0 && (
-                  <div className="mb-2 flex flex-wrap gap-2">{m.attachments.map((p) => <ChatImage key={p} path={p} />)}</div>
+                  <div className="mb-2 flex flex-wrap gap-2">{m.attachments.map((p) => <ChatMedia key={p} path={p} />)}</div>
                 )}
                 {m.content !== "(foto)" && <p className="whitespace-pre-wrap">{m.content}</p>}
               </div>

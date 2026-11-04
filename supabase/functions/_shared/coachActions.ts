@@ -31,6 +31,13 @@ export interface StoredAction {
 
 export const MAX_ACTIONS_PER_REPLY = 6;
 export const MAX_ATTACHMENTS = 3;
+/** Fotogramas que la app extrae de cada video adjunto; el modelo los recibe como imágenes. */
+export const VIDEO_FRAMES = 4;
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const VIDEO_EXTENSIONS = ["mp4", "mov", "webm", "m4v"] as const;
+export const isVideoPath = (path: string) => /\.(mp4|mov|webm|m4v)$/i.test(path);
+/** Ruta del fotograma i de un video: `<uid>/chat/<nombre>.mp4` → `<uid>/chat/<nombre>.f<i>.jpg`. */
+export const videoFramePath = (videoPath: string, i: number) => videoPath.replace(/\.[^.]+$/, `.f${i}.jpg`);
 
 export const WEEKDAY_NAMES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"] as const;
 export const FOCUS_KEYS = ["glutes", "legs", "hamstrings", "quads", "calves", "chest", "back", "shoulders", "arms", "core", "cardio"] as const;

@@ -80,7 +80,11 @@ export class AnthropicProvider implements ChatProvider {
       if (error instanceof Anthropic.APIConnectionTimeoutError) return { ok: false, reason: "timeout" };
       if (error instanceof Anthropic.RateLimitError) return { ok: false, reason: "rate_limited" };
       if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) return { ok: false, reason: "auth" };
-      if (error instanceof Anthropic.BadRequestError) return { ok: false, reason: "bad_request", detail: error.message };
+      if (error instanceof Anthropic.BadRequestError) {
+        // Sin saldo en la cuenta de Anthropic: la API responde 400 con este mensaje.
+        if (/credit balance/i.test(error.message)) return { ok: false, reason: "billing", detail: error.message };
+        return { ok: false, reason: "bad_request", detail: error.message };
+      }
       if (error instanceof Anthropic.APIError) return { ok: false, reason: "unavailable", detail: `status ${error.status}` };
       return { ok: false, reason: "unavailable", detail: error instanceof Error ? error.message : String(error) };
     }

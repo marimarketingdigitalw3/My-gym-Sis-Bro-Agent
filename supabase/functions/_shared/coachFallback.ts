@@ -228,8 +228,8 @@ export function fallbackReply(message: string, ctx: CoachContext, catalog: Catal
   if (!message.trim()) {
     return {
       text: t(lang,
-        "Recibí tu foto. En este modo no puedo analizar imágenes; cuando el proveedor de IA esté conectado, te daré comentarios sobre lo que muestra.",
-        "I received your photo. In this mode I can't analyse images; once the AI provider is connected I'll comment on what it shows."),
+        "Recibí tu foto o video. En este modo no puedo analizar imágenes; cuando el proveedor de IA esté conectado, te daré comentarios sobre lo que muestra.",
+        "I received your photo or video. In this mode I can't analyse images; once the AI provider is connected I'll comment on what it shows."),
       source: "fallback", intent: "photo", actions: [],
     };
   }

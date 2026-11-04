@@ -6,7 +6,7 @@ import {
   COACH_SYSTEM_PROMPT, conversationTitle, formatCatalog, formatContext, isRateLimited, prepareHistory, validateChatRequest,
   type CatalogEntry, type HistoryMessage,
 } from "../_shared/coach.ts";
-import { actionFromTool, COACH_TOOLS, describeAction, MAX_ACTIONS_PER_REPLY, type CoachAction, type StoredAction } from "../_shared/coachActions.ts";
+import { actionFromTool, COACH_TOOLS, describeAction, isVideoPath, MAX_ACTIONS_PER_REPLY, VIDEO_FRAMES, videoFramePath, type CoachAction, type StoredAction } from "../_shared/coachActions.ts";
 import type { ImageInput } from "../_shared/ai/provider.ts";
 import { buildCoachContext } from "../_shared/coachContext.ts";
 import { fallbackReply } from "../_shared/coachFallback.ts";
@@ -34,6 +34,16 @@ function isoDate(d: Date) {
 }
 
 const ATTACHMENT_BUCKET = "chat-attachments";
+
+// Aviso que ve la persona cuando el proveedor de IA falla, según la causa (sin datos técnicos).
+const PROVIDER_NOTICES: Record<string, string> = {
+  timeout: "La IA tardó demasiado en responder. Te mostramos una respuesta del modo de respaldo.",
+  billing: "La cuenta de IA no tiene saldo: recarga créditos en console.anthropic.com (Plans & Billing) y el coach volverá a responder con IA. Mientras tanto, respuesta del modo de respaldo.",
+  auth: "La clave de IA no es válida o no tiene permisos. Revisa el secreto ANTHROPIC_API_KEY. Mientras tanto, respuesta del modo de respaldo.",
+  rate_limited: "La IA recibió demasiadas consultas en este momento. Inténtalo en un minuto. Mientras tanto, respuesta del modo de respaldo.",
+  refused: "La IA no pudo responder a esta consulta. Te mostramos una respuesta del modo de respaldo.",
+  unavailable: "La IA no está disponible en este momento. Te mostramos una respuesta del modo de respaldo.",
+};
 const MEDIA: Record<string, ImageInput["mediaType"]> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
 
 function toBase64(bytes: Uint8Array): string {
@@ -153,13 +163,24 @@ Deno.serve(async (req: Request) => {
     exerciseName: (id) => nameById.get(id) ?? id,
   });
 
-  // Fotos adjuntas: se leen del bucket privado y se envían al proveedor como imágenes.
+  // Adjuntos: las fotos se leen del bucket privado y se envían al proveedor como imágenes.
+  // De un video solo se envían los fotogramas que la app subió junto a él (<nombre>.f0.jpg ... f3.jpg).
   const images: ImageInput[] = [];
-  for (const path of attachments) {
+  const videoNotes: string[] = [];
+  const loadImage = async (path: string, quiet = false) => {
     const { data: blob, error: dlError } = await admin.storage.from(ATTACHMENT_BUCKET).download(path);
-    if (dlError || !blob) { console.error("attachment download", path, dlError?.message); continue; }
+    if (dlError || !blob) { if (!quiet) console.error("attachment download", path, dlError?.message); return false; }
     const ext = path.split(".").pop()?.toLowerCase() ?? "jpg";
     images.push({ mediaType: MEDIA[ext] ?? "image/jpeg", base64: toBase64(new Uint8Array(await blob.arrayBuffer())) });
+    return true;
+  };
+  for (const path of attachments) {
+    if (!isVideoPath(path)) { await loadImage(path); continue; }
+    let frames = 0;
+    for (let i = 0; i < VIDEO_FRAMES; i++) if (await loadImage(videoFramePath(path, i), true)) frames++;
+    videoNotes.push(frames
+      ? `(Adjunto un video; te envío ${frames} fotogramas en orden.)`
+      : "(Adjunto un video, pero no se pudieron extraer fotogramas; pídeme una foto o descríbeme el movimiento.)");
   }
 
   const exerciseName = (id: string) => nameById.get(id) ?? id;
@@ -185,7 +206,7 @@ Deno.serve(async (req: Request) => {
       system: COACH_SYSTEM_PROMPT,
       reference: formatCatalog(catalog),
       context: formatContext(context),
-      messages: prepareHistory(history, message || "(Envío una foto. Dime qué ves y qué me recomiendas.)"),
+      messages: prepareHistory(history, [message || "(Envío una foto. Dime qué ves y qué me recomiendas.)", ...videoNotes].join("\n")),
       images,
       tools: [...COACH_TOOLS],
     });
@@ -198,9 +219,7 @@ Deno.serve(async (req: Request) => {
       reply = { text, source: "ai", actions };
     } else {
       console.error("coach provider error", result.reason, result.detail ?? "");
-      reply = fallback(result.reason === "timeout"
-        ? "La IA tardó demasiado en responder. Te mostramos una respuesta del modo de respaldo."
-        : "La IA no está disponible en este momento. Te mostramos una respuesta del modo de respaldo.");
+      reply = fallback(PROVIDER_NOTICES[result.reason] ?? PROVIDER_NOTICES.unavailable);
     }
   }
 

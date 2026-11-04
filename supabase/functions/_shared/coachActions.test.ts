@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actionFromTool, describeAction, parseActionIntents, parseStoredActions } from "./coachActions.ts";
+import { actionFromTool, describeAction, isVideoPath, parseActionIntents, parseStoredActions, videoFramePath } from "./coachActions.ts";
 
 const catalog = [
   { id: "hip-thrust", name: "Hip thrust con barra" },
@@ -68,5 +68,14 @@ describe("intérprete de órdenes sin IA", () => {
   it("no inventa acciones en preguntas normales", () => {
     expect(parseActionIntents("¿Qué entreno hoy?", catalog, schedule)).toEqual([]);
     expect(parseActionIntents("Me duele la rodilla al hacer sentadilla", catalog, schedule)).toEqual([]);
+  });
+});
+
+describe("adjuntos de video", () => {
+  it("reconoce videos y nombra sus fotogramas junto al archivo", () => {
+    expect(isVideoPath("u/chat/1-ab.mp4")).toBe(true);
+    expect(isVideoPath("u/chat/1-ab.MOV")).toBe(true);
+    expect(isVideoPath("u/chat/1-ab.jpg")).toBe(false);
+    expect(videoFramePath("u/chat/1-ab.mp4", 2)).toBe("u/chat/1-ab.f2.jpg");
   });
 });

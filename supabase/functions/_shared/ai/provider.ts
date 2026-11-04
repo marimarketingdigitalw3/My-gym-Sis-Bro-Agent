@@ -23,14 +23,14 @@ export interface ChatCompletionRequest {
   reference?: string;
   context: string; // datos del usuario para este turno
   messages: HistoryMessage[];
-  /** Fotos adjuntas al último mensaje del usuario. */
+  /** Fotos (o fotogramas de video) adjuntas al último mensaje del usuario. */
   images?: ImageInput[];
   tools?: ToolDefinition[];
 }
 
 export type ChatCompletionResult =
   | { ok: true; text: string; model: string; toolCalls: ToolCall[] }
-  | { ok: false; reason: "refused" | "rate_limited" | "timeout" | "unavailable" | "auth" | "bad_request"; detail?: string };
+  | { ok: false; reason: "refused" | "rate_limited" | "timeout" | "unavailable" | "auth" | "billing" | "bad_request"; detail?: string };
 
 export interface ChatProvider {
   readonly name: string;

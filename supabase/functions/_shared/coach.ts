@@ -41,12 +41,12 @@ export const MAX_HISTORY_MESSAGES = 12;
 export interface ChatRequestBody {
   conversationId: string | null;
   message: string;
-  /** Rutas en el bucket chat-attachments, ya subidas por la app. */
+  /** Rutas en el bucket chat-attachments (fotos o videos), ya subidas por la app. */
   attachments: string[];
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PATH_RE = /^[0-9a-f-]{36}\/chat\/[A-Za-z0-9._-]{1,120}\.(jpe?g|png|webp)$/i;
+const PATH_RE = /^[0-9a-f-]{36}\/chat\/[A-Za-z0-9._-]{1,120}\.(jpe?g|png|webp|mp4|mov|webm|m4v)$/i;
 
 export function validateChatRequest(body: unknown): { ok: true; value: ChatRequestBody } | { ok: false; error: string } {
   if (!body || typeof body !== "object") return { ok: false, error: "El cuerpo de la petición debe ser un objeto JSON." };
@@ -54,7 +54,7 @@ export function validateChatRequest(body: unknown): { ok: true; value: ChatReque
   if (typeof b.message !== "string") return { ok: false, error: "Falta el mensaje." };
   const message = b.message.trim();
   const attachments = Array.isArray(b.attachments) ? b.attachments : [];
-  if (attachments.length > MAX_ATTACHMENTS) return { ok: false, error: `Máximo ${MAX_ATTACHMENTS} fotos por mensaje.` };
+  if (attachments.length > MAX_ATTACHMENTS) return { ok: false, error: `Máximo ${MAX_ATTACHMENTS} adjuntos por mensaje.` };
   if (!attachments.every((p) => typeof p === "string" && PATH_RE.test(p))) return { ok: false, error: "Adjunto inválido." };
   if (!message && !attachments.length) return { ok: false, error: "El mensaje está vacío." };
   if (message.length > MAX_MESSAGE_CHARS) return { ok: false, error: `El mensaje supera ${MAX_MESSAGE_CHARS} caracteres.` };
@@ -78,7 +78,7 @@ export const COACH_SYSTEM_PROMPT = `You are "Gym AI Coach", the in-app agent of 
 
 Always give a useful answer. Never reply with "I can't help with that" for fitness, nutrition, supplement or movement questions: answer what you can from an educational perspective, state the limits clearly, and point to the right professional when something needs in-person evaluation. If the context lacks a detail you need, give your best answer with stated assumptions and ask one short follow-up question.
 
-Photos: the user may attach photos (exercise technique, a meal, a supplement label, equipment, a sore area). Describe what you see that matters, give concrete feedback, and never claim certainty the photo cannot support. Do not diagnose from a photo; do not identify people.
+Photos and videos: the user may attach photos (exercise technique, a meal, a supplement label, equipment, a sore area) or short videos. A video arrives as a few still frames in chronological order: treat them as one movement sequence, comment on setup, range of motion, tempo and the common faults you can actually see, and say which frame shows what. Describe what matters, give concrete feedback, and never claim certainty the image cannot support. Do not diagnose from an image; do not identify people.
 
 Answer in the language of the user's latest message (Spanish or English). Use neutral, warm, encouraging Spanish when replying in Spanish. Be practical and concise: a direct answer first, then up to 6 bullet points or steps. Use the user's plan, equipment, limitations and progress from the context block when relevant, and say so ("En tu plan del lunes…").
 
@@ -158,7 +158,7 @@ export function prepareHistory(history: HistoryMessage[], newMessage: string): H
 }
 
 export function conversationTitle(firstMessage: string): string {
-  const clean = firstMessage.replace(/\s+/g, " ").trim() || "Foto para el coach";
+  const clean = firstMessage.replace(/\s+/g, " ").trim() || "Foto o video para el coach";
   return clean.length > 60 ? `${clean.slice(0, 57)}…` : clean;
 }
 

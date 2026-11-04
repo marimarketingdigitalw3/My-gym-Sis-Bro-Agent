@@ -169,7 +169,9 @@ El proyecto incluye `vercel.json` (build de Vite, reescritura SPA hacia `index.h
 ## Gym AI Coach como agente
 
 - **Perspectivas**: entrenamiento, nutrición, suplementación y fisioterapia (prompt en `supabase/functions/_shared/coach.ts`). Siempre responde dentro de los límites de seguridad y deriva a un profesional cuando corresponde.
-- **Fotos**: la app reduce la imagen (`lib/images.ts`), la sube al bucket privado `chat-attachments` (`<uid>/chat/...`) y envía la ruta; la Edge Function la descarga con `service_role` y la pasa al modelo como imagen. Máximo 3 por mensaje.
+- **Fotos**: la app reduce la imagen (`lib/images.ts`), la sube al bucket privado `chat-attachments` (`<uid>/chat/...`) y envía la ruta; la Edge Function la descarga con `service_role` y la pasa al modelo como imagen. Máximo 3 adjuntos por mensaje.
+- **Videos**: la app sube el video (MP4, MOV o WebM, máximo 50 MB) y extrae en el navegador hasta 4 fotogramas JPEG (`<nombre>.f0.jpg` … `.f3.jpg`). El modelo recibe los fotogramas en orden como una secuencia de movimiento; el video queda guardado para verlo en el chat.
+- **Avisos del proveedor**: si la llamada a la IA falla, la respuesta llega del modo de respaldo con un aviso según la causa (sin saldo en la cuenta de Anthropic, clave inválida, límite de peticiones, tiempo de espera). El workflow manual **Diagnóstico del coach** (Actions) comprueba la clave y los modelos sin exponerla.
 - **Acciones**: el modelo usa herramientas (`_shared/coachActions.ts`, `COACH_TOOLS`). Cada llamada se valida (`actionFromTool`) y se guarda en `chat_messages.actions` como propuesta con etiqueta en español. La app las muestra como tarjetas y la persona las aplica (`services/coachActions.ts`), reutilizando los mismos servicios que las pantallas. Sin IA, `parseActionIntents` reconoce órdenes frecuentes.
 - **Contexto**: agenda semanal con horas e ids de ejercicios, suplementos, ritmo del día y catálogo completo (bloque cacheable).
 - **Migración**: `20261103000001_coach_agent.sql` (columnas `attachments` y `actions`, política de actualización propia y bucket).

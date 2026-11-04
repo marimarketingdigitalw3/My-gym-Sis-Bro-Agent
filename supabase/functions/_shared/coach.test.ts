@@ -25,6 +25,8 @@ describe("validación de peticiones", () => {
     const path = "123e4567-e89b-12d3-a456-426614174000/chat/1700000000-0.jpg";
     expect(validateChatRequest({ message: "", attachments: [path] }).ok).toBe(true);
     expect(validateChatRequest({ message: "hola", attachments: ["../otro/x.jpg"] }).ok).toBe(false);
+    expect(validateChatRequest({ message: "", attachments: [path.replace(".jpg", ".mp4")] }).ok).toBe(true);
+    expect(validateChatRequest({ message: "", attachments: [path.replace(".jpg", ".exe")] }).ok).toBe(false);
     expect(validateChatRequest({ message: "hola", attachments: [path, path, path, path] }).ok).toBe(false);
     expect(validateChatRequest({ message: "x".repeat(2001) }).ok).toBe(false);
     expect(validateChatRequest({ message: "hola", conversationId: "1; drop table" }).ok).toBe(false);

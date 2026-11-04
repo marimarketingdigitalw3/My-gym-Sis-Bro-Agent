@@ -292,7 +292,7 @@ await test("coach agente: foto adjunta y cambios aplicados desde el chat", async
   await page.getByRole("button", { name: /Empezar a conversar/ }).click();
   // Foto adjunta: miniatura antes de enviar y dentro del mensaje.
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mNk+M9QzwAEjDAGACUBA/8RrBmYAAAAAElFTkSuQmCC", "base64");
-  await page.locator('input[type="file"][aria-label="Adjuntar foto"]').setInputFiles({ name: "tecnica.png", mimeType: "image/png", buffer: png });
+  await page.locator('input[type="file"][aria-label="Adjuntar foto o video"]').setInputFiles({ name: "tecnica.png", mimeType: "image/png", buffer: png });
   await page.getByAltText("Foto por enviar 1").waitFor();
   await page.getByLabel("Escribe tu pregunta").fill("¿Cómo ves mi técnica en esta foto?");
   await page.getByRole("button", { name: "Enviar" }).click();
