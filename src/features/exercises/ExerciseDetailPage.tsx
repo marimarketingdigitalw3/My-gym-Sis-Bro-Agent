@@ -1,7 +1,7 @@
 import { ArrowLeft, Info } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useBundle } from "@/app/providers";
-import { MuscleMap } from "@/components/MuscleMap";
+import { MuscleMap, muscleBodyForTheme } from "@/components/MuscleMap";
 import { ExerciseMedia } from "@/components/ExerciseMedia";
 import { useDemoVariant } from "@/components/ExerciseGuide";
 import { Badge, Button, Card, CardHeader, EmptyState, Notice } from "@/components/ui";
@@ -44,7 +44,7 @@ export default function ExerciseDetailPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="Músculos trabajados" />
-          <MuscleMap primary={ex.primaryMuscles} secondary={ex.secondaryMuscles} />
+          <MuscleMap primary={ex.primaryMuscles} secondary={ex.secondaryMuscles} body={muscleBodyForTheme(bundle.profile.theme)} />
           <p className="mt-3 text-sm"><strong>Principales:</strong> {ex.primaryMuscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>
           {ex.secondaryMuscles.length > 0 && <p className="text-sm text-muted"><strong className="text-text">Secundarios:</strong> {ex.secondaryMuscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>}
           <p className="mt-2 text-sm text-muted"><strong className="text-text">Equipo:</strong> {ex.equipment.map((e) => EQUIPMENT_LABELS[e]).join(", ")}</p>
