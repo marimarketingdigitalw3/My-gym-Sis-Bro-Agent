@@ -30,7 +30,7 @@ jobs:
               -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
               -d "{\"model\":\"$model\",\"max_tokens\":32,\"messages\":[{\"role\":\"user\",\"content\":\"Di hola\"}]}")
             echo "POST /v1/messages ($model, básica) -> $code"
-            [ "$code" != "200" ] && python3 -c "import json;d=json.load(open('/tmp/out.json'));print('  ', d.get('error',d))"
+            [ "$code" != "200" ] && python3 -c "import json;d=json.load(open('/tmp/out.json'));print('  ', d.get('error',d))" || true
           done
       - name: Petición con los mismos parámetros que la función
         run: |
