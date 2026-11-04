@@ -179,3 +179,8 @@ export const chatImageUrl = (path: string) => db.photoUrl(path, "chat-attachment
 export async function saveMessageActions(messageId: string, actions: StoredAction[]) {
   await db.update("chat_messages", { id: messageId }, { actions });
 }
+
+/** Audio de una respuesta del coach con ElevenLabs; null si no está disponible (se usa la voz del navegador). */
+export const speakCoachMessage = (messageId: string, voice: "female" | "male") => db.speakCoachMessage(messageId, voice);
+/** Texto de una nota de voz con ElevenLabs; null si no está disponible (se usa el dictado del navegador). */
+export const transcribeAudio = (audio: Blob) => db.transcribeAudio(audio);

@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
     steps:
       - name: Clave presente
         run: |
@@ -41,3 +42,17 @@ jobs:
           echo "POST /v1/messages (opus 5.5 + effort + fallbacks) -> $code"
           [ "$code" != "200" ] && python3 -c "import json;d=json.load(open('/tmp/out.json'));print('  ', d.get('error',d))"
           true
+      - name: Voz (ElevenLabs)
+        run: |
+          if [ -z "$ELEVENLABS_API_KEY" ]; then echo "Sin ELEVENLABS_API_KEY: la voz usa el navegador."; exit 0; fi
+          code=$(curl -s -o /tmp/el.json -w "%{http_code}" https://api.elevenlabs.io/v1/user/subscription -H "xi-api-key: $ELEVENLABS_API_KEY")
+          echo "GET /v1/user/subscription -> $code"
+          if [ "$code" = "200" ]; then
+            python3 -c "import json;d=json.load(open('/tmp/el.json'));print('plan:',d.get('tier'),'| caracteres usados:',d.get('character_count'),'de',d.get('character_limit'))"
+          else
+            python3 -c "import json;print('  ', json.load(open('/tmp/el.json')).get('detail'))" || true
+          fi
+          code=$(curl -s -o /tmp/tts.mp3 -w "%{http_code}" "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL?output_format=mp3_22050_32" \
+            -H "xi-api-key: $ELEVENLABS_API_KEY" -H "content-type: application/json" -d '{"text":"Hola","model_id":"eleven_multilingual_v2"}')
+          echo "POST /v1/text-to-speech (voz base) -> $code"
+          [ "$code" != "200" ] && cat /tmp/tts.mp3 | head -c 300 || true

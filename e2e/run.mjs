@@ -298,6 +298,12 @@ await test("coach agente: foto adjunta y cambios aplicados desde el chat", async
   await page.getByRole("button", { name: "Enviar" }).click();
   await page.getByAltText("Foto adjunta").first().waitFor();
   await page.getByText(/Recibí tu foto|no puedo analizar imágenes|respaldo/).first().waitFor();
+  // Voz: interruptor de lectura automática, botón para escuchar cada respuesta y micrófono en el composer.
+  await page.getByRole("button", { name: "Activar respuestas en voz alta" }).click();
+  await page.getByRole("button", { name: "Desactivar respuestas en voz alta" }).waitFor();
+  await page.getByRole("button", { name: "Desactivar respuestas en voz alta" }).click();
+  assert(await page.getByRole("button", { name: "Escuchar respuesta" }).count() > 0, "falta el botón para escuchar la respuesta");
+  await page.getByRole("button", { name: "Hablar con el coach" }).waitFor();
   // Orden que se convierte en acción: cambiar el horario del lunes.
   await page.getByLabel("Escribe tu pregunta").fill("Cambia la hora del lunes a las 7:00");
   await page.getByRole("button", { name: "Enviar" }).click();
