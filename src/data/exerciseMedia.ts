@@ -3,7 +3,8 @@
 export interface ExerciseMediaEntry { start?: string; peak?: string; main?: string; source: string }
 export const EXERCISE_MEDIA: Record<string, ExerciseMediaEntry> = {
   "assisted-pull-up-machine": { start: "assisted-pull-ups-start.webp", peak: "assisted-pull-ups-peak.webp", source: "assisted-pull-ups" },
-  "band-curl": { start: "banded-standing-curl-start.webp", peak: "banded-standing-curl-peak.webp", source: "banded-standing-curl" },
+  // gymbot-*: ilustraciones propias en el estilo de RepDB para ejercicios que RepDB no incluye.
+  "band-curl": { start: "gymbot-band-curl-start.webp", peak: "gymbot-band-curl-peak.webp", source: "gymbot-band-curl" },
   "band-hip-abduction": { start: "banded-seated-hip-abduction-start.webp", peak: "banded-seated-hip-abduction-peak.webp", source: "banded-seated-hip-abduction" },
   "band-lat-pulldown": { start: "lat-pulldown-start.webp", peak: "lat-pulldown-peak.webp", source: "lat-pulldown" },
   "band-pull-apart": { start: "band-pull-apart-start.webp", peak: "band-pull-apart-peak.webp", source: "band-pull-apart" },
