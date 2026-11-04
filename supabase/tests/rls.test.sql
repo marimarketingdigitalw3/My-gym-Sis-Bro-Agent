@@ -26,6 +26,7 @@ insert into auth.users (id, email, raw_user_meta_data) values
 select pg_temp.assert((select count(*) = 2 from profiles), 'el trigger crea un perfil por usuario');
 select pg_temp.assert((select count(*) = 2 from user_settings), 'el trigger crea ajustes por usuario');
 select pg_temp.assert((select display_name = 'Ana' from profiles where id = '00000000-0000-0000-0000-00000000000a'), 'el nombre del registro se copia al perfil');
+select pg_temp.assert((select 'video/mp4' = any(allowed_mime_types) and file_size_limit = 52428800 from storage.buckets where id = 'chat-attachments'), 'El bucket del coach admite video de hasta 50 MB');
 
 -- ---------- Ana crea sus datos ----------
 select pg_temp.login('00000000-0000-0000-0000-00000000000a');
@@ -41,7 +42,15 @@ insert into progress_measurements (user_id, measured_on, weight_kg) values (auth
 insert into supplement_logs (user_id, logged_on, supplement) values (auth.uid(), current_date, 'creatine');
 insert into chat_conversations (id, user_id) values ('30000000-0000-0000-0000-00000000000a', auth.uid());
 insert into chat_messages (conversation_id, user_id, role, content) values ('30000000-0000-0000-0000-00000000000a', auth.uid(), 'user', 'Hola');
+insert into chat_messages (conversation_id, user_id, role, content, attachments)
+  values ('30000000-0000-0000-0000-00000000000a', auth.uid(), 'user', 'Mira mi técnica', array[auth.uid()::text || '/chat/1.jpg']);
+insert into storage.objects (bucket_id, name) values ('chat-attachments', auth.uid()::text || '/chat/1.jpg');
+select pg_temp.assert((select count(*) = 1 from storage.objects where bucket_id = 'chat-attachments'), 'Ana sube una foto al coach');
+insert into storage.objects (bucket_id, name) values ('chat-attachments', auth.uid()::text || '/chat/2.mp4'), ('chat-attachments', auth.uid()::text || '/chat/2.f0.jpg');
+select pg_temp.assert((select count(*) = 3 from storage.objects where bucket_id = 'chat-attachments'), 'Ana sube un video y su fotograma al coach');
 select pg_temp.assert((select count(*) = 1 from workout_exercises), 'Ana ve su ejercicio del plan');
+update chat_messages set actions = '[{"id":"a1","applied_at":"2026-11-03T00:00:00Z"}]'::jsonb where conversation_id = '30000000-0000-0000-0000-00000000000a' and content = 'Hola';
+select pg_temp.assert((select count(*) = 1 from chat_messages where actions <> '[]'::jsonb), 'Ana marca acciones en sus propios mensajes');
 
 do $$ begin
   insert into chat_messages (conversation_id, user_id, role, content)
@@ -63,6 +72,14 @@ select pg_temp.assert((select count(*) = 0 from workout_plans), 'Beto no ve plan
 select pg_temp.assert((select count(*) = 0 from workout_exercises), 'Beto no ve ejercicios de planes ajenos');
 select pg_temp.assert((select count(*) = 0 from exercise_sets), 'Beto no ve series ajenas');
 select pg_temp.assert((select count(*) = 0 from cycle_logs), 'Beto no ve datos de ciclo ajenos');
+select pg_temp.assert((select count(*) = 0 from storage.objects where bucket_id = 'chat-attachments'), 'Beto no ve los adjuntos del coach de Ana');
+do $$ begin
+  insert into storage.objects (bucket_id, name) values ('chat-attachments', '00000000-0000-0000-0000-00000000000a/chat/2.jpg');
+  raise exception 'FALLO: Beto pudo subir a la carpeta de fotos del coach de Ana';
+exception when insufficient_privilege then raise notice 'ok - el bucket del coach bloquea carpetas ajenas';
+end $$;
+update chat_messages set actions = '[{"id":"x"}]'::jsonb where user_id = '00000000-0000-0000-0000-00000000000a';
+select pg_temp.assert((select count(*) = 0 from chat_messages where actions <> '[]'::jsonb), 'Beto no puede marcar acciones en mensajes de Ana');
 select pg_temp.assert((select count(*) = 0 from supplement_logs), 'Beto no ve suplementos ajenos');
 select pg_temp.assert((select count(*) = 0 from progress_measurements), 'Beto no ve medidas ajenas');
 select pg_temp.assert((select count(*) = 0 from chat_messages), 'Beto no ve conversaciones ajenas');

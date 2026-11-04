@@ -1,5 +1,7 @@
 // Nutrición, agua, progreso, bienestar, ciclo y coach.
 import { db } from "./data";
+import { compressImage, extractVideoFrames } from "@/lib/images";
+import { MAX_VIDEO_BYTES, VIDEO_FRAMES, videoFramePath, type StoredAction } from "../../supabase/functions/_shared/coachActions.ts";
 import type {
   CycleLogRow, MealLogRow, MealPlanDay, MealPlanRow, MeasurementRow, RecoveryLogRow,
 } from "@/types/db";
@@ -141,4 +143,39 @@ export async function deleteConversation(id: string) {
   await db.remove("chat_conversations", { id });
 }
 
-export const sendCoachMessage = (conversationId: string | null, message: string) => db.sendCoachMessage(conversationId, message);
+export const sendCoachMessage = (conversationId: string | null, message: string, attachments: string[] = []) => db.sendCoachMessage(conversationId, message, attachments);
+
+const VIDEO_EXT: Record<string, string> = { "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm", "video/x-m4v": "m4v" };
+
+/**
+ * Sube un adjunto para el coach y devuelve su ruta en el bucket privado.
+ * Foto: reducida en el navegador. Video: se sube tal cual (máximo 50 MB) junto con hasta 4 fotogramas
+ * JPEG (`<nombre>.f0.jpg` …) que son lo que el modelo analiza.
+ */
+export async function uploadChatAttachment(userId: string, file: File): Promise<string> {
+  const base = `${userId}/chat/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  if (file.type.startsWith("video/")) {
+    const ext = VIDEO_EXT[file.type];
+    if (!ext) throw new Error("Formato de video no compatible. Usa MP4, MOV o WebM.");
+    if (file.size > MAX_VIDEO_BYTES) throw new Error("El video es demasiado grande (máximo 50 MB). Recórtalo a unos segundos.");
+    const frames = await extractVideoFrames(file, VIDEO_FRAMES);
+    const path = `${base}.${ext}`;
+    await db.uploadPhoto(path, file, "chat-attachments");
+    await Promise.all(frames.map((f, i) => db.uploadPhoto(videoFramePath(path, i), f, "chat-attachments")));
+    return path;
+  }
+  const small = await compressImage(file);
+  const path = `${base}.jpg`;
+  await db.uploadPhoto(path, small, "chat-attachments");
+  return path;
+}
+
+/** Compatibilidad: alias del nombre anterior. */
+export const uploadChatImage = uploadChatAttachment;
+
+export const chatImageUrl = (path: string) => db.photoUrl(path, "chat-attachments");
+
+/** Guarda el estado de las acciones (aplicadas o no) de un mensaje del coach. */
+export async function saveMessageActions(messageId: string, actions: StoredAction[]) {
+  await db.update("chat_messages", { id: messageId }, { actions });
+}

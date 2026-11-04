@@ -23,6 +23,14 @@ async function test(name, fn) {
   } catch (e) {
     results.push({ name, ok: false, error: e.message });
     console.log(`✘ ${name}\n   ${e.message.split("\n")[0]}`);
+    // Evidencia del fallo: captura y texto visible de la última página compartida (si existe).
+    try {
+      const p = globalThis.__lastPage;
+      if (p && !p.isClosed()) {
+        await p.screenshot({ path: `${SHOTS}fail-${results.length}.png`, fullPage: true });
+        console.log("   texto visible:", (await p.locator("main").innerText()).replace(/\s+/g, " ").slice(0, 600));
+      }
+    } catch { /* sin evidencia */ }
   }
 }
 function assert(cond, msg) {
@@ -55,6 +63,7 @@ async function newPage(viewport = { width: 390, height: 844 }) {
   page.on("pageerror", (e) => page.errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/fonts\.googleapis|ERR_FAILED/.test(m.text())) page.errors.push(m.text()); });
   page.on("dialog", (d) => d.accept());
+  globalThis.__lastPage = page;
   return { context, page };
 }
 
@@ -265,7 +274,7 @@ await test("progreso: medidas con gráfico real, fuerza y constancia", async () 
 await test("coach: respuesta de respaldo identificada y bloqueo por síntomas de alarma", async () => {
   const { page } = mar;
   await page.goto(`${BASE}/coach`);
-  await page.getByRole("button", { name: "¿Qué entreno hoy?" }).click();
+  await page.getByRole("button", { name: /^Entrenamiento/ }).click();
   await page.getByText("Modo de respaldo · no es IA").first().waitFor();
   await page.getByLabel("Escribe tu pregunta").fill("Tengo cólicos hoy, ¿qué opciones tengo?");
   await page.getByRole("button", { name: "Enviar" }).click();
@@ -275,6 +284,43 @@ await test("coach: respuesta de respaldo identificada y bloqueo por síntomas de
   await page.getByText("Seguridad").last().waitFor();
   await page.getByText(/busca evaluación médica/).waitFor();
   await page.screenshot({ path: `${SHOTS}07-coach.png`, fullPage: true });
+});
+
+await test("coach agente: foto adjunta y cambios aplicados desde el chat", async () => {
+  const { page } = mar;
+  await page.goto(`${BASE}/coach`);
+  await page.getByRole("button", { name: /Empezar a conversar/ }).click();
+  // Foto adjunta: miniatura antes de enviar y dentro del mensaje.
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mNk+M9QzwAEjDAGACUBA/8RrBmYAAAAAElFTkSuQmCC", "base64");
+  await page.locator('input[type="file"][aria-label="Adjuntar foto o video"]').setInputFiles({ name: "tecnica.png", mimeType: "image/png", buffer: png });
+  await page.getByAltText("Foto por enviar 1").waitFor();
+  await page.getByLabel("Escribe tu pregunta").fill("¿Cómo ves mi técnica en esta foto?");
+  await page.getByRole("button", { name: "Enviar" }).click();
+  await page.getByAltText("Foto adjunta").first().waitFor();
+  await page.getByText(/Recibí tu foto|no puedo analizar imágenes|respaldo/).first().waitFor();
+  // Orden que se convierte en acción: cambiar el horario del lunes.
+  await page.getByLabel("Escribe tu pregunta").fill("Cambia la hora del lunes a las 7:00");
+  await page.getByRole("button", { name: "Enviar" }).click();
+  const cards = () => page.getByLabel("Cambios propuestos").last();
+  await cards().getByText("Entrenar el lunes a las 7:00 a. m.").waitFor();
+  await cards().getByRole("button", { name: "Aplicar" }).first().click();
+  await page.getByText("Horario actualizado en Entrenos").waitFor();
+  await page.getByText("Aplicado").waitFor();
+  // Varias acciones en un mensaje y "Aplicar todo".
+  await page.getByLabel("Escribe tu pregunta").fill("Agrega creatina y magnesio, y quiero 5 comidas al día");
+  await page.getByRole("button", { name: "Enviar" }).click();
+  await cards().getByText("Suplementos: Añadir creatina, magnesio").waitFor();
+  await cards().getByRole("button", { name: "Aplicar todo" }).click();
+  await page.getByText("2 cambios aplicados").waitFor();
+  await noHorizontalScroll(page, "coach agente");
+  await page.screenshot({ path: `${SHOTS}15-coach-agent.png`, fullPage: true });
+  // Los cambios se ven en las otras secciones.
+  await page.goto(`${BASE}/workouts`);
+  await page.getByText("Tu semana de entrenamiento").waitFor();
+  await page.getByText("7:00 a. m.").first().waitFor();
+  await page.goto(`${BASE}/nutrition`);
+  await page.getByRole("tab", { name: "Suplementos" }).click();
+  await page.getByText("0 de 2 tomados").waitFor();
 });
 
 await test("ciclo: calendario, confianza baja por irregularidad y registro de síntomas", async () => {

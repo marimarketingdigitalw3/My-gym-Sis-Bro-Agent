@@ -8,14 +8,26 @@ import { AnthropicProvider } from "./ai/anthropic.ts";
 const ctx: CoachContext = {
   firstName: "Mar", language: "es", level: "beginner", goals: ["glutes_legs"], equipment: ["dumbbells"], limitations: ["knee"],
   todayWorkout: { title: "Glúteos y piernas", exercises: ["Puente de glúteo", "Peso muerto rumano con mancuernas"] },
+  todayWeekday: 2,
+  weekSchedule: [
+    { weekday: 0, title: "Glúteos y piernas", time: "18:00", exercises: [{ id: "glute-bridge", name: "Puente de glúteo" }] },
+    { weekday: 2, title: "Tren superior", time: null, exercises: [] },
+  ],
   recentSessions: [], personalRecords: [], missedSessionsThisWeek: 0,
-  nutrition: { diet: "vegan", allergens: ["gluten"], proteinTargetG: 110 }, cycleToday: null,
+  nutrition: { diet: "vegan", allergens: ["gluten"], proteinTargetG: 110, mealsPerDay: 4 }, cycleToday: null,
+  supplements: ["creatine"], rhythm: { wakeTime: "06:30", sleepTime: null },
 };
 
 describe("validación de peticiones", () => {
   it("acepta mensajes válidos y rechaza los inválidos", () => {
-    expect(validateChatRequest({ message: " Hola " })).toEqual({ ok: true, value: { conversationId: null, message: "Hola" } });
+    expect(validateChatRequest({ message: " Hola " })).toEqual({ ok: true, value: { conversationId: null, message: "Hola", attachments: [] } });
     expect(validateChatRequest({ message: "" }).ok).toBe(false);
+    const path = "123e4567-e89b-12d3-a456-426614174000/chat/1700000000-0.jpg";
+    expect(validateChatRequest({ message: "", attachments: [path] }).ok).toBe(true);
+    expect(validateChatRequest({ message: "hola", attachments: ["../otro/x.jpg"] }).ok).toBe(false);
+    expect(validateChatRequest({ message: "", attachments: [path.replace(".jpg", ".mp4")] }).ok).toBe(true);
+    expect(validateChatRequest({ message: "", attachments: [path.replace(".jpg", ".exe")] }).ok).toBe(false);
+    expect(validateChatRequest({ message: "hola", attachments: [path, path, path, path] }).ok).toBe(false);
     expect(validateChatRequest({ message: "x".repeat(2001) }).ok).toBe(false);
     expect(validateChatRequest({ message: "hola", conversationId: "1; drop table" }).ok).toBe(false);
     expect(validateChatRequest(null).ok).toBe(false);
@@ -55,6 +67,8 @@ describe("contexto mínimo", () => {
     expect(c.todayWorkout).toEqual({ title: "Glúteos", exercises: ["nombre:glute-bridge"] });
     expect(c.cycleToday).toBeNull();
     expect(formatContext(c)).not.toMatch(/cramps/);
+    expect(c.weekSchedule).toEqual([{ weekday: 2, title: "Glúteos", time: null, exercises: [{ id: "glute-bridge", name: "nombre:glute-bridge" }] }]);
+    expect(formatContext(c)).toMatch(/Rest days .*0 Mon/);
   });
   it("no comparte nada personal si la persona lo desactivó", () => {
     const c = buildCoachContext({ ...base, settings: { ai_share_context: false, cycle_tracking_enabled: true } });
@@ -87,6 +101,18 @@ describe("respuestas de respaldo", () => {
   it("responde en inglés cuando se pregunta en inglés", () => {
     expect(fallbackReply("I have cramps today, what are my options?", ctx).text).toMatch(/options/);
   });
+  it("propone acciones cuando la orden es reconocible", () => {
+    const r = fallbackReply("Mueve glúteos al jueves y agrega magnesio", ctx, [{ id: "glute-bridge", name: "Puente de glúteo" }]);
+    expect(r.intent).toBe("actions");
+    expect(r.actions).toEqual([
+      { type: "move_routine", from_weekday: 0, to_weekday: 3 },
+      { type: "set_supplements", add: ["magnesium"], remove: [] },
+    ]);
+    expect(r.text).toMatch(/Mover la rutina del lunes al jueves/);
+  });
+  it("reconoce una foto sin texto", () => {
+    expect(fallbackReply("", ctx).intent).toBe("photo");
+  });
 });
 
 function fakeClient(impl: (params?: unknown) => Promise<unknown>) {
@@ -103,13 +129,34 @@ describe("proveedor Anthropic", () => {
       content: [{ type: "thinking", thinking: "" }, { type: "text", text: "¡Hola!" }],
     }));
     const r = await new AnthropicProvider({ apiKey: "x", client }).complete(request);
-    expect(r).toEqual({ ok: true, text: "¡Hola!", model: "claude-opus-5-5" });
+    expect(r).toEqual({ ok: true, text: "¡Hola!", model: "claude-opus-5-5", toolCalls: [] });
     const params = create.mock.calls[0][0] as unknown as Record<string, unknown>;
     expect(params.model).toBe("claude-opus-5-5");
     expect(params.output_config).toEqual({ effort: "medium" });
     expect(params.fallbacks).toBe("default");
     expect(params.betas).toEqual(["server-side-fallback-2026-07-01"]);
     expect((params.system as unknown[]).length).toBe(2);
+  });
+
+  it("envía fotos con el último mensaje, el catálogo como bloque cacheable y devuelve las herramientas llamadas", async () => {
+    const { create, client } = fakeClient(async () => ({
+      model: "m", stop_reason: "tool_use", stop_details: null,
+      content: [
+        { type: "text", text: "Preparé el cambio." },
+        { type: "tool_use", id: "t1", name: "set_training_time", input: { weekday: 0, time: "07:00" } },
+      ],
+    }));
+    const r = await new AnthropicProvider({ apiKey: "x", client }).complete({
+      ...request, reference: "<exercise_catalog/>",
+      images: [{ mediaType: "image/jpeg", base64: "AAAA" }],
+      tools: [{ name: "set_training_time", description: "d", input_schema: { type: "object" } }],
+    });
+    expect(r).toEqual({ ok: true, text: "Preparé el cambio.", model: "m", toolCalls: [{ name: "set_training_time", input: { weekday: 0, time: "07:00" } }] });
+    const params = create.mock.calls[0][0] as unknown as { system: unknown[]; messages: { content: unknown }[]; tools: unknown[] };
+    expect(params.system.length).toBe(3);
+    const last = params.messages[params.messages.length - 1].content as { type: string }[];
+    expect(last.map((b) => b.type)).toEqual(["image", "text"]);
+    expect(params.tools.length).toBe(1);
   });
 
   it("trata los rechazos antes de leer el contenido", async () => {

@@ -3,6 +3,7 @@
 import type { CoachContext, CoachLanguage } from "./coach.ts";
 import { detectLanguage } from "./coach.ts";
 import { detectRedFlags, safetyMessage } from "./safety.ts";
+import { describeAction, parseActionIntents, type CatalogItem, type CoachAction } from "./coachActions.ts";
 
 interface Intent {
   key: string;
@@ -202,12 +203,36 @@ const INTENTS: Intent[] = [
   },
 ];
 
-export function fallbackReply(message: string, ctx: CoachContext): { text: string; source: "fallback" | "safety"; intent: string } {
+export interface FallbackReply { text: string; source: "fallback" | "safety"; intent: string; actions: CoachAction[] }
+
+export function fallbackReply(message: string, ctx: CoachContext, catalog: CatalogItem[] = []): FallbackReply {
   const lang = detectLanguage(message, ctx.language);
   const flags = detectRedFlags(message);
-  if (flags.length) return { text: safetyMessage(flags, lang), source: "safety", intent: "safety" };
+  if (flags.length) return { text: safetyMessage(flags, lang), source: "safety", intent: "safety", actions: [] };
+
+  // Órdenes reconocibles sin IA: se proponen como acciones que la persona confirma.
+  const actions = parseActionIntents(message, catalog, ctx.weekSchedule.map((d) => ({ weekday: d.weekday as 0 | 1 | 2 | 3 | 4 | 5 | 6, title: d.title })));
+  if (actions.length) {
+    const nameOf = (id: string) => catalog.find((c) => c.id === id)?.name ?? id;
+    const one = actions.length === 1;
+    return {
+      text: t(lang,
+        `Entendido. Preparé ${one ? "este cambio" : "estos cambios"} para que lo${one ? "" : "s"} confirmes:\n${list(actions.map((a) => describeAction(a, nameOf)))}\n\nToca **Aplicar** y lo verás reflejado en la sección correspondiente.`,
+        `Got it. I prepared ${one ? "this change" : "these changes"} for you to confirm:\n${list(actions.map((a) => describeAction(a, nameOf)))}\n\nTap **Apply** and you'll see it in the matching section.`),
+      source: "fallback", intent: "actions", actions,
+    };
+  }
+
   const intent = INTENTS.find((i) => i.re.test(message));
-  if (intent) return { text: intent.answer(ctx, lang), source: "fallback", intent: intent.key };
+  if (intent) return { text: intent.answer(ctx, lang), source: "fallback", intent: intent.key, actions: [] };
+  if (!message.trim()) {
+    return {
+      text: t(lang,
+        "Recibí tu foto o video. En este modo no puedo analizar imágenes; cuando el proveedor de IA esté conectado, te daré comentarios sobre lo que muestra.",
+        "I received your photo or video. In this mode I can't analyse images; once the AI provider is connected I'll comment on what it shows."),
+      source: "fallback", intent: "photo", actions: [],
+    };
+  }
   return {
     text: t(lang,
       `En el modo de respaldo puedo ayudarte con temas frecuentes:\n${list([
@@ -216,6 +241,7 @@ export function fallbackReply(message: string, ctx: CoachContext): { text: strin
         "Glúteos, cardio o recuperación",
         "Qué comer después de entrenar",
         "Qué hacer si te perdiste entrenamientos o te estancaste",
+        "Cambios en tu plan: \"cambia la hora del lunes a las 7\", \"agrega pierna el viernes\", \"agrega creatina\"",
       ])}\n\nPrueba con una de esas preguntas.`,
       `In fallback mode I can help with common topics:\n${list([
         "What should I train today?",
@@ -223,8 +249,10 @@ export function fallbackReply(message: string, ctx: CoachContext): { text: strin
         "Glutes, cardio or recovery",
         "What to eat after training",
         "What to do if you missed sessions or stalled",
+        "Plan changes: \"change Monday's time to 7\", \"add legs on Friday\", \"add creatine\"",
       ])}\n\nTry one of those questions.`),
     source: "fallback",
     intent: "unknown",
+    actions: [],
   };
 }

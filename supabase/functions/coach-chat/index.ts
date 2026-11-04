@@ -3,9 +3,11 @@
 // La clave del proveedor se lee del entorno del servidor y nunca llega al navegador.
 import { createClient } from "@supabase/supabase-js";
 import {
-  COACH_SYSTEM_PROMPT, conversationTitle, formatContext, isRateLimited, prepareHistory, validateChatRequest,
-  type HistoryMessage,
+  COACH_SYSTEM_PROMPT, conversationTitle, formatCatalog, formatContext, isRateLimited, prepareHistory, validateChatRequest,
+  type CatalogEntry, type HistoryMessage,
 } from "../_shared/coach.ts";
+import { actionFromTool, COACH_TOOLS, describeAction, isVideoPath, MAX_ACTIONS_PER_REPLY, VIDEO_FRAMES, videoFramePath, type CoachAction, type StoredAction } from "../_shared/coachActions.ts";
+import type { ImageInput } from "../_shared/ai/provider.ts";
 import { buildCoachContext } from "../_shared/coachContext.ts";
 import { fallbackReply } from "../_shared/coachFallback.ts";
 import { detectRedFlags, safetyMessage } from "../_shared/safety.ts";
@@ -29,6 +31,39 @@ function providerFromEnv(): ChatProvider | null {
 
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
+}
+
+const ATTACHMENT_BUCKET = "chat-attachments";
+
+// Aviso que ve la persona cuando el proveedor de IA falla, según la causa (sin datos técnicos).
+const PROVIDER_NOTICES: Record<string, string> = {
+  timeout: "La IA tardó demasiado en responder. Te mostramos una respuesta del modo de respaldo.",
+  billing: "La cuenta de IA no tiene saldo: recarga créditos en console.anthropic.com (Plans & Billing) y el coach volverá a responder con IA. Mientras tanto, respuesta del modo de respaldo.",
+  auth: "La clave de IA no es válida o no tiene permisos. Revisa el secreto ANTHROPIC_API_KEY. Mientras tanto, respuesta del modo de respaldo.",
+  rate_limited: "La IA recibió demasiadas consultas en este momento. Inténtalo en un minuto. Mientras tanto, respuesta del modo de respaldo.",
+  refused: "La IA no pudo responder a esta consulta. Te mostramos una respuesta del modo de respaldo.",
+  unavailable: "La IA no está disponible en este momento. Te mostramos una respuesta del modo de respaldo.",
+};
+const MEDIA: Record<string, ImageInput["mediaType"]> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
+
+function toBase64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+/** Convierte llamadas a herramientas en acciones guardables con etiqueta en español. */
+function storedActions(calls: { name: string; input: unknown }[], exerciseName: (id: string) => string, validExercise: (id: string) => boolean): StoredAction[] {
+  const out: StoredAction[] = [];
+  for (const c of calls) {
+    const a: CoachAction | null = actionFromTool(c.name, c.input);
+    if (!a) continue;
+    if ("exercise_id" in a && !validExercise(a.exercise_id)) continue;
+    if (a.type === "swap_exercise" && !validExercise(a.replacement_id)) continue;
+    out.push({ id: crypto.randomUUID(), action: a, label: describeAction(a, exerciseName), applied_at: null });
+    if (out.length >= MAX_ACTIONS_PER_REPLY) break;
+  }
+  return out;
 }
 
 Deno.serve(async (req: Request) => {
@@ -57,7 +92,8 @@ Deno.serve(async (req: Request) => {
   }
   const parsed = validateChatRequest(body);
   if (!parsed.ok) return json({ error: parsed.error }, 400);
-  const { message } = parsed.value;
+  const { message, attachments } = parsed.value;
+  if (attachments.some((p) => !p.startsWith(`${userId}/`))) return json({ error: "Adjunto no permitido." }, 403);
 
   const limit = Number(Deno.env.get("COACH_RATE_LIMIT_PER_HOUR") ?? 30);
   const since = new Date(Date.now() - 3_600_000).toISOString();
@@ -84,35 +120,31 @@ Deno.serve(async (req: Request) => {
   const history = ((historyRows ?? []) as HistoryMessage[]).reverse();
 
   const { error: insertError } = await userDb.from("chat_messages")
-    .insert({ conversation_id: conversationId, user_id: userId, role: "user", content: message, source: "user" });
+    .insert({ conversation_id: conversationId, user_id: userId, role: "user", content: message || "(foto)", source: "user", attachments });
   if (insertError) return json({ error: "No se pudo guardar el mensaje." }, 500);
 
   // Contexto mínimo (RLS).
   const now = new Date();
   const todayWeekday = (now.getUTCDay() + 6) % 7;
   const weekStart = new Date(now.getTime() - todayWeekday * 86_400_000);
-  const [profile, settings, onboarding, goals, plan, nutrition, cycleToday] = await Promise.all([
+  const [profile, settings, onboarding, goals, plan, nutrition, cycleToday, library] = await Promise.all([
     userDb.from("profiles").select("display_name, language").eq("id", userId).single(),
     userDb.from("user_settings").select("ai_share_context, cycle_tracking_enabled").eq("user_id", userId).single(),
     userDb.from("onboarding_responses").select("fitness, environment, health").eq("user_id", userId).maybeSingle(),
     userDb.from("fitness_goals").select("goal, priority, status"),
     userDb.from("workout_plans").select("id, days_per_week, schedule").eq("is_active", true).maybeSingle(),
-    userDb.from("nutrition_preferences").select("diet, allergens").maybeSingle(),
+    userDb.from("nutrition_preferences").select("diet, allergens, meals_per_day, supplements, wake_time, sleep_time").maybeSingle(),
     userDb.from("cycle_logs").select("symptoms, energy").eq("logged_on", isoDate(now)).maybeSingle(),
+    userDb.from("exercise_library").select("id, name, primary_muscles, equipment").order("id"),
   ]);
+  const catalog: CatalogEntry[] = ((library.data ?? []) as { id: string; name: string; primary_muscles: string[]; equipment: string[] }[])
+    .map((e) => ({ id: e.id, name: e.name, muscles: e.primary_muscles ?? [], equipment: e.equipment ?? [] }));
   const [planExercises, sessions, sets] = await Promise.all([
     plan.data ? userDb.from("workout_exercises").select("day_index, position, exercise_id").eq("plan_id", plan.data.id) : Promise.resolve({ data: [] }),
     userDb.from("workout_sessions").select("started_at, title, status").order("started_at", { ascending: false }).limit(20),
     userDb.from("exercise_sets").select("exercise_id, weight_kg, reps, completed").order("created_at", { ascending: false }).limit(200),
   ]);
-  const ids = new Set<string>([
-    ...((planExercises.data ?? []) as { exercise_id: string }[]).map((e) => e.exercise_id),
-    ...((sets.data ?? []) as { exercise_id: string }[]).map((s) => s.exercise_id),
-  ]);
-  const { data: names } = ids.size
-    ? await userDb.from("exercise_library").select("id, name").in("id", [...ids])
-    : { data: [] as { id: string; name: string }[] };
-  const nameById = new Map((names ?? []).map((n: { id: string; name: string }) => [n.id, n.name]));
+  const nameById = new Map(catalog.map((e) => [e.id, e.name]));
 
   const context = buildCoachContext({
     profile: profile.data ?? { display_name: "", language: "es" },
@@ -131,38 +163,69 @@ Deno.serve(async (req: Request) => {
     exerciseName: (id) => nameById.get(id) ?? id,
   });
 
+  // Adjuntos: las fotos se leen del bucket privado y se envían al proveedor como imágenes.
+  // De un video solo se envían los fotogramas que la app subió junto a él (<nombre>.f0.jpg ... f3.jpg).
+  const images: ImageInput[] = [];
+  const videoNotes: string[] = [];
+  const loadImage = async (path: string, quiet = false) => {
+    const { data: blob, error: dlError } = await admin.storage.from(ATTACHMENT_BUCKET).download(path);
+    if (dlError || !blob) { if (!quiet) console.error("attachment download", path, dlError?.message); return false; }
+    const ext = path.split(".").pop()?.toLowerCase() ?? "jpg";
+    images.push({ mediaType: MEDIA[ext] ?? "image/jpeg", base64: toBase64(new Uint8Array(await blob.arrayBuffer())) });
+    return true;
+  };
+  for (const path of attachments) {
+    if (!isVideoPath(path)) { await loadImage(path); continue; }
+    let frames = 0;
+    for (let i = 0; i < VIDEO_FRAMES; i++) if (await loadImage(videoFramePath(path, i), true)) frames++;
+    videoNotes.push(frames
+      ? `(Adjunto un video; te envío ${frames} fotogramas en orden.)`
+      : "(Adjunto un video, pero no se pudieron extraer fotogramas; pídeme una foto o descríbeme el movimiento.)");
+  }
+
+  const exerciseName = (id: string) => nameById.get(id) ?? id;
+  const validExercise = (id: string) => nameById.has(id);
+  const catalogItems = catalog.map((e) => ({ id: e.id, name: e.name }));
+  const fallback = (notice: string) => {
+    const f = fallbackReply(message, context, catalogItems);
+    return { text: f.text, source: f.source, notice, actions: storedActions(f.actions.map((a) => ({ name: a.type, input: a })), exerciseName, validExercise) };
+  };
+
   // 1. Señales de alarma: respuesta de seguridad sin llamar al proveedor.
-  // 2. Proveedor de IA configurado: respuesta generada.
+  // 2. Proveedor de IA configurado: respuesta generada, con acciones propuestas si las hay.
   // 3. Sin proveedor o con error: modo de respaldo identificado como tal.
-  let reply: { text: string; source: "ai" | "fallback" | "safety"; notice?: string };
+  let reply: { text: string; source: "ai" | "fallback" | "safety"; notice?: string; actions: StoredAction[] };
   const flags = detectRedFlags(message);
   const provider = providerFromEnv();
   if (flags.length) {
-    reply = { text: safetyMessage(flags, context.language), source: "safety" };
+    reply = { text: safetyMessage(flags, context.language), source: "safety", actions: [] };
   } else if (!provider) {
-    reply = { ...fallbackReply(message, context), notice: "El proveedor de IA no está configurado. Respuesta del modo de respaldo." };
+    reply = fallback("El proveedor de IA no está configurado. Respuesta del modo de respaldo.");
   } else {
     const result = await provider.complete({
       system: COACH_SYSTEM_PROMPT,
+      reference: formatCatalog(catalog),
       context: formatContext(context),
-      messages: prepareHistory(history, message),
+      messages: prepareHistory(history, [message || "(Envío una foto. Dime qué ves y qué me recomiendas.)", ...videoNotes].join("\n")),
+      images,
+      tools: [...COACH_TOOLS],
     });
     if (result.ok) {
-      reply = { text: result.text, source: "ai" };
+      const actions = storedActions(result.toolCalls, exerciseName, validExercise);
+      const one = actions.length === 1;
+      const text = result.text || (actions.length
+        ? `Preparé ${one ? "este cambio" : "estos cambios"} para que lo${one ? "" : "s"} confirmes:\n${actions.map((a) => `• ${a.label}`).join("\n")}`
+        : "");
+      reply = { text, source: "ai", actions };
     } else {
       console.error("coach provider error", result.reason, result.detail ?? "");
-      reply = {
-        ...fallbackReply(message, context),
-        notice: result.reason === "timeout"
-          ? "La IA tardó demasiado en responder. Te mostramos una respuesta del modo de respaldo."
-          : "La IA no está disponible en este momento. Te mostramos una respuesta del modo de respaldo.",
-      };
+      reply = fallback(PROVIDER_NOTICES[result.reason] ?? PROVIDER_NOTICES.unavailable);
     }
   }
 
   const { data: saved, error: saveError } = await admin.from("chat_messages")
-    .insert({ conversation_id: conversationId, user_id: userId, role: "assistant", content: reply.text.slice(0, 8000), source: reply.source })
-    .select("id, conversation_id, user_id, role, content, source, created_at").single();
+    .insert({ conversation_id: conversationId, user_id: userId, role: "assistant", content: reply.text.slice(0, 8000), source: reply.source, actions: reply.actions })
+    .select("id, conversation_id, user_id, role, content, source, created_at, attachments, actions").single();
   if (saveError) console.error("save assistant message", saveError.message);
   await admin.from("chat_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
 
