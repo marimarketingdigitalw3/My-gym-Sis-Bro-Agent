@@ -1,7 +1,7 @@
 // Implementación real sobre Supabase (Auth, PostgreSQL con RLS, Storage y Edge Functions).
 import { createClient, FunctionsHttpError, type SupabaseClient } from "@supabase/supabase-js";
 import type { TableName } from "@/types/db";
-import { DataError, type AuthService, type CoachResponse, type DataClient, type PhotoBucket, type QueryOptions, type Row } from "./types";
+import { DataError, type AuthService, type CoachResponse, type DataClient, type StyleAdviceResponse, type PhotoBucket, type QueryOptions, type Row } from "./types";
 
 const PHOTO_BUCKET: PhotoBucket = "progress-photos";
 
@@ -149,6 +149,24 @@ export function createSupabaseDataClient(url: string, anonKey: string): DataClie
         throw new DataError(detail, "coach_error", status);
       }
       return data as CoachResponse;
+    },
+
+    async requestStyleAdvice(req) {
+      const { data, error } = await sb.functions.invoke("style-advice", { body: req });
+      if (error) {
+        let detail = "No pudimos preparar tu consejo ahora.";
+        let status: number | undefined;
+        if (error instanceof FunctionsHttpError) {
+          status = error.context.status;
+          try {
+            detail = (await error.context.json()).error ?? detail;
+          } catch {
+            // respuesta sin JSON
+          }
+        }
+        throw new DataError(detail, "style_error", status);
+      }
+      return data as StyleAdviceResponse;
     },
 
     async speakCoachMessage(messageId, voice) {

@@ -12,6 +12,7 @@ const WorkoutsPage = lazy(() => import("./features/workouts/WorkoutsPage"));
 const SessionPage = lazy(() => import("./features/workouts/SessionPage"));
 const ExerciseLibraryPage = lazy(() => import("./features/exercises/ExerciseLibraryPage"));
 const ExerciseDetailPage = lazy(() => import("./features/exercises/ExerciseDetailPage"));
+const StylePage = lazy(() => import("./features/style/StylePage"));
 const NutritionPage = lazy(() => import("./features/nutrition/NutritionPage"));
 const ProgressPage = lazy(() => import("./features/progress/ProgressPage"));
 const CoachPage = lazy(() => import("./features/coach/CoachPage"));
@@ -73,6 +74,7 @@ export default function App() {
                       <Route path="/nutrition" element={<NutritionPage />} />
                       <Route path="/progress" element={<ProgressPage />} />
                       <Route path="/coach" element={<CoachPage />} />
+                      <Route path="/style" element={<StylePage />} />
                       <Route path="/cycle" element={<CyclePage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                     </Route>

@@ -56,3 +56,4 @@ jobs:
           supabase functions deploy coach-chat --yes --project-ref "$PROJECT_REF"
           supabase functions deploy delete-account --yes --project-ref "$PROJECT_REF"
           supabase functions deploy coach-voice --yes --project-ref "$PROJECT_REF"
+          supabase functions deploy style-advice --yes --project-ref "$PROJECT_REF"

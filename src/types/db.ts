@@ -341,6 +341,40 @@ export interface ChatMessageRow {
   created_at: string;
 }
 
+export interface StyleProfileRow {
+  user_id: string;
+  styles: string[];
+  favorite_colors: string[];
+  avoid_colors: string[];
+  fit: "ajustado" | "holgado" | "mixto" | null;
+  coverage: "alta" | "media" | "baja" | null;
+  activities: string[];
+  notes: string | null;
+  updated_at: string;
+}
+
+export interface WardrobeItemRow {
+  id: string;
+  user_id: string;
+  /** Ruta de la foto en el bucket wardrobe (<uid>/...). */
+  storage_path: string;
+  category: "top" | "sports_bra" | "leggings" | "shorts" | "set" | "jacket" | "shoes" | "accessory";
+  colors: string[];
+  name: string | null;
+  created_at: string;
+}
+
+export interface StyleAdviceRow {
+  id: string;
+  user_id: string;
+  activity: string;
+  item_ids: string[];
+  question: string | null;
+  content: string;
+  source: "ai" | "fallback";
+  created_at: string;
+}
+
 export interface Tables {
   profiles: ProfileRow;
   user_settings: UserSettingsRow;
@@ -362,6 +396,9 @@ export interface Tables {
   cycle_logs: CycleLogRow;
   chat_conversations: ChatConversationRow;
   chat_messages: ChatMessageRow;
+  style_profiles: StyleProfileRow;
+  wardrobe_items: WardrobeItemRow;
+  style_advice: StyleAdviceRow;
 }
 
 export type TableName = keyof Tables;

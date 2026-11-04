@@ -16,3 +16,6 @@ verify_jwt = true
 
 [functions.coach-voice]
 verify_jwt = true
+
+[functions.style-advice]
+verify_jwt = true
