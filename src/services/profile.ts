@@ -63,6 +63,8 @@ export async function saveCycleSettings(settings: Partial<CycleSettingsRow>) {
 export async function deleteAllMyData() {
   const photos = await db.select("progress_photos");
   await db.removePhotos(photos.map((p) => p.storage_path));
+  const wardrobe = await db.select("wardrobe_items");
+  await db.removePhotos(wardrobe.map((w) => w.storage_path), "wardrobe");
   for (const table of PERSONAL_TABLES) {
     const rows = await db.select(table);
     if (rows.length) await db.remove(table, {});

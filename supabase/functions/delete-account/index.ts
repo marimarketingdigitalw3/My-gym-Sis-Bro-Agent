@@ -31,10 +31,26 @@ Deno.serve(async (req: Request) => {
 
   const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const userId = data.user.id;
-  const { data: files } = await admin.storage.from("progress-photos").list(userId, { limit: 1000 });
-  if (files?.length) await admin.storage.from("progress-photos").remove(files.map((f: { name: string }) => `${userId}/${f.name}`));
+  // Fotos de progreso, adjuntos y audios del coach, y fotos del clóset (incluidas las subcarpetas).
+  for (const bucket of ["progress-photos", "chat-attachments", "wardrobe"]) {
+    const paths = await listAll(admin, bucket, userId);
+    for (let i = 0; i < paths.length; i += 100) await admin.storage.from(bucket).remove(paths.slice(i, i + 100));
+  }
 
   const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
   if (deleteError) return json({ error: "No se pudo borrar la cuenta." }, 500);
   return json({ ok: true });
 });
+
+/** Rutas de todos los archivos bajo una carpeta del bucket, recorriendo subcarpetas. */
+// deno-lint-ignore no-explicit-any
+async function listAll(admin: any, bucket: string, prefix: string, depth = 0): Promise<string[]> {
+  const { data } = await admin.storage.from(bucket).list(prefix, { limit: 1000 });
+  const out: string[] = [];
+  for (const f of (data ?? []) as { name: string; id: string | null }[]) {
+    const path = `${prefix}/${f.name}`;
+    if (f.id) out.push(path);
+    else if (depth < 3) out.push(...await listAll(admin, bucket, path, depth + 1));
+  }
+  return out;
+}

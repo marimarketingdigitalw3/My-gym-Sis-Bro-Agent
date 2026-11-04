@@ -2,7 +2,7 @@ import {
   Apple, ArrowLeft, ArrowUpRight, Camera, Check, Copy, Dumbbell, HeartPulse, History, ImagePlus, Loader2, MessageSquarePlus, Pill, Plus, Send, Video, Mic, Square, Volume2, VolumeX,
   ShieldAlert, Sparkles, Trash2, User, Wand2, X,
 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useBundle, useUserData } from "@/app/providers";
 import { Avatar } from "@/app/AppShell";
@@ -15,6 +15,7 @@ import { applyCoachAction } from "@/services/coachActions";
 import { chatImageUrl, deleteConversation, listConversations, listMessages, saveMessageActions, sendCoachMessage, uploadChatAttachment } from "@/services/tracking";
 import type { ChatConversationRow, ChatMessageRow } from "@/types/db";
 import { useCoachVoice } from "./useCoachVoice";
+import { RichText } from "@/components/RichText";
 import { MAX_MESSAGE_CHARS } from "../../../supabase/functions/_shared/coach.ts";
 import { actionSection, isVideoPath, MAX_ATTACHMENTS, MAX_VIDEO_BYTES, parseStoredActions, type StoredAction } from "../../../supabase/functions/_shared/coachActions.ts";
 
@@ -37,28 +38,6 @@ const ACTION_IDEAS = [
   "Agrega creatina a mis suplementos",
   "Quiero 5 comidas al día",
 ];
-
-/** Render mínimo y seguro: negritas (**x**) y viñetas, sin HTML. */
-function RichText({ text }: { text: string }) {
-  const blocks: ReactNode[] = [];
-  let bullets: string[] = [];
-  const inline = (s: string) => s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2, -2)}</strong> : <Fragment key={i}>{part}</Fragment>);
-  const flush = () => {
-    if (bullets.length) blocks.push(<ul key={`u${blocks.length}`} className="list-disc space-y-1 pl-5">{bullets.map((b, i) => <li key={i}>{inline(b)}</li>)}</ul>);
-    bullets = [];
-  };
-  for (const line of text.split("\n")) {
-    const m = line.match(/^\s*(?:[•\-*]|\d+\.)\s+(.*)$/);
-    if (m) bullets.push(m[1]);
-    else {
-      flush();
-      if (line.trim()) blocks.push(<p key={`p${blocks.length}`}>{inline(line.replace(/^#+\s*/, ""))}</p>);
-    }
-  }
-  flush();
-  return <div className="prose-coach space-y-2">{blocks}</div>;
-}
 
 function SourceBadge({ source }: { source: ChatMessageRow["source"] }) {
   if (source === "ai") return <Badge tone="primary"><Sparkles className="h-3 w-3" /> IA</Badge>;

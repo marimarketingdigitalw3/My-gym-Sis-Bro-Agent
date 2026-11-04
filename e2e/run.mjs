@@ -329,6 +329,43 @@ await test("coach agente: foto adjunta y cambios aplicados desde el chat", async
   await page.getByText("0 de 2 tomados").waitFor();
 });
 
+await test("gym sis: mis outfits con estilo, clóset y consejo", async () => {
+  const { page } = mar;
+  await page.goto(`${BASE}/`);
+  await page.getByRole("link", { name: /Mis outfits/ }).click();
+  await page.getByRole("heading", { name: "Mis outfits" }).waitFor();
+  // Mi estilo
+  await page.getByRole("tab", { name: "Mi estilo" }).click();
+  await page.getByRole("group", { name: "Estilos que te gustan" }).getByRole("button", { name: "Minimalista" }).click();
+  await page.getByRole("group", { name: "Colores favoritos" }).getByRole("button", { name: "Rosa" }).click();
+  await page.getByRole("group", { name: "Colores que prefieres evitar" }).getByRole("button", { name: "Amarillo" }).click();
+  await page.getByRole("group", { name: "Cobertura" }).getByRole("button", { name: "Más cubierta" }).click();
+  await page.getByRole("button", { name: "Guardar mi estilo" }).click();
+  await page.getByText("Tu estilo quedó guardado.").waitFor();
+  // Mi clóset: subir una prenda
+  await page.getByRole("tab", { name: /Mi clóset/ }).click();
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mNk+M9QzwAEjDAGACUBA/8RrBmYAAAAAElFTkSuQmCC", "base64");
+  await page.locator('input[type="file"][aria-label="Foto de la prenda"]').setInputFiles({ name: "top.png", mimeType: "image/png", buffer: png });
+  await page.getByAltText("Prenda por guardar").waitFor();
+  await page.getByRole("group", { name: "Tipo de prenda" }).getByRole("button", { name: "Top deportivo" }).click();
+  await page.getByRole("group", { name: "Colores de la prenda" }).getByRole("button", { name: "Rosa" }).click();
+  await page.getByLabel("Nombre").fill("Top rosa de soporte alto");
+  await page.getByRole("button", { name: "Guardar prenda" }).click();
+  await page.getByText("Prenda guardada en tu clóset.").waitFor();
+  await page.getByText("Top rosa de soporte alto").waitFor();
+  // Pedir consejo con esa prenda
+  await page.getByRole("tab", { name: "Pedir consejo" }).click();
+  await page.getByRole("group", { name: "Tipo de entreno" }).getByRole("button", { name: "HIIT y funcional" }).click();
+  await page.getByRole("button", { name: /Elegir Top rosa de soporte alto/ }).click();
+  await page.getByRole("button", { name: "Pedir consejo" }).click();
+  await page.getByText("Tu look para HIIT y funcional").waitFor();
+  await page.getByText(/Top rosa de soporte alto/).last().waitFor();
+  await page.getByText(/Dejamos fuera amarillo/).waitFor();
+  await page.screenshot({ path: `${SHOTS}12-gym-sis-outfits.png`, fullPage: true });
+  await noHorizontalScroll(page, "outfits");
+  assert(page.errors.length === 0, page.errors.join(" | "));
+});
+
 await test("ciclo: calendario, confianza baja por irregularidad y registro de síntomas", async () => {
   const { page } = mar;
   await page.goto(`${BASE}/cycle`);

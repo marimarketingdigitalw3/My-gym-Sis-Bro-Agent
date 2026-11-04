@@ -31,7 +31,7 @@ export interface AuthService {
   updatePassword(newPassword: string): Promise<void>;
 }
 
-export type PhotoBucket = "progress-photos" | "chat-attachments";
+export type PhotoBucket = "progress-photos" | "chat-attachments" | "wardrobe";
 
 export interface CoachResponse {
   conversationId: string;
@@ -62,17 +62,24 @@ export interface DataClient {
   speakCoachMessage(messageId: string, voice: "female" | "male"): Promise<string | null>;
   /** Texto de una nota de voz. null si la transcripción de ElevenLabs no está disponible en este modo. */
   transcribeAudio(audio: Blob): Promise<string | null>;
+  /** Consejo de outfits (Gym Sis). Con IA en el servidor; en el modo demo, consejo de reglas. */
+  requestStyleAdvice(req: { activity: string; itemIds: string[]; question: string }): Promise<StyleAdviceResponse>;
   deleteAccount(): Promise<void>;
+}
+
+export interface StyleAdviceResponse {
+  advice: import("@/types/db").StyleAdviceRow;
+  notice: string | null;
 }
 
 /** Tablas cuya clave es el propio usuario (no llevan columna id). */
 export const SINGLETON_TABLES = new Set<TableName>([
-  "profiles", "user_settings", "onboarding_responses", "nutrition_preferences", "cycle_settings",
+  "profiles", "user_settings", "onboarding_responses", "nutrition_preferences", "cycle_settings", "style_profiles",
 ]);
 
 /** Tablas que se borran al pedir "borrar mis datos" (se conserva la cuenta). */
 export const PERSONAL_TABLES: TableName[] = [
-  "chat_messages", "chat_conversations", "exercise_sets", "workout_sessions", "workout_exercises", "workout_plans",
+  "style_advice", "wardrobe_items", "style_profiles", "chat_messages", "chat_conversations", "exercise_sets", "workout_sessions", "workout_exercises", "workout_plans",
   "meal_logs", "meal_plans", "water_logs", "supplement_logs", "progress_photos", "progress_measurements", "recovery_logs", "cycle_logs",
   "cycle_settings", "fitness_goals", "nutrition_preferences", "onboarding_responses",
 ];

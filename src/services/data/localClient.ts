@@ -7,10 +7,11 @@ import { startOfWeek, todayISO, weekdayIndex } from "@/lib/dates";
 import { buildCoachContext } from "../../../supabase/functions/_shared/coachContext.ts";
 import { conversationTitle } from "../../../supabase/functions/_shared/coach.ts";
 import { fallbackReply } from "../../../supabase/functions/_shared/coachFallback.ts";
+import { styleFallback, validateStyleRequest } from "../../../supabase/functions/_shared/style.ts";
 import type { ChatMessageRow, TableName } from "@/types/db";
 import {
   DataError, PERSONAL_TABLES, SINGLETON_TABLES, type AuthService, type AuthUser, type CoachResponse, type DataClient,
-  type QueryOptions, type Row,
+  type QueryOptions, type Row, type StyleAdviceResponse,
 } from "./types";
 
 const DB_KEY = "mgs:local-db:v1";
@@ -252,6 +253,21 @@ export function createLocalDataClient(): DataClient {
     async removePhotos(paths) {
       const userId = uid();
       for (const p of paths) if (p.startsWith(`${userId}/`)) await idb<undefined>("readwrite", (s) => s.delete(p));
+    },
+
+    async requestStyleAdvice(req): Promise<StyleAdviceResponse> {
+      const parsed = validateStyleRequest(req);
+      if (!parsed.ok) throw new DataError(parsed.error);
+      const userId = uid();
+      const data = load();
+      const closet = scoped(data, "wardrobe_items", userId) as unknown as Row<"wardrobe_items">[];
+      const selected = parsed.value.itemIds.map((id) => closet.find((i) => i.id === id)).filter((i): i is Row<"wardrobe_items"> => !!i);
+      const profile = (scoped(data, "style_profiles", userId)[0] ?? null) as unknown as Row<"style_profiles"> | null;
+      const content = styleFallback({ activity: parsed.value.activity, profile, selected, closet });
+      const [advice] = await client.insert("style_advice", [{
+        activity: parsed.value.activity, item_ids: parsed.value.itemIds, question: parsed.value.question || null, content, source: "fallback",
+      }]);
+      return { advice, notice: "Modo demo: consejo basado en reglas, sin analizar las fotos." };
     },
 
     // En el modo demo no hay servidor: la app usa la voz y el dictado del navegador.

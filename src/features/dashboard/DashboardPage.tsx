@@ -1,4 +1,4 @@
-import { ArrowRight, Bot, CalendarDays, CalendarHeart, CheckCircle2, ChevronRight, Flame, Snowflake } from "lucide-react";
+import { ArrowRight, Bot, CalendarDays, CalendarHeart, CheckCircle2, ChevronRight, Flame, Shirt, Snowflake } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useGymBotMood } from "@/app/gymbot";
@@ -204,6 +204,19 @@ export default function DashboardPage() {
           </Card>
         </Link>
       </div>
+
+      {theme === "sis" && (
+        <Link to="/style" className="group block">
+          <Card className="tint-pink flex items-center gap-4 transition group-hover:border-primary-strong">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary-strong"><Shirt className="h-6 w-6" /></span>
+            <span className="flex-1">
+              <span className="block font-semibold">Mis outfits</span>
+              <span className="block text-sm text-muted">Sube tus prendas y te digo cómo combinarlas según tu entreno y tu estilo.</span>
+            </span>
+            <ChevronRight className="h-5 w-5 text-muted" />
+          </Card>
+        </Link>
+      )}
 
       <Link to="/progress" className="flex items-center justify-between rounded-card border border-border/60 bg-surface px-5 py-4 shadow-card transition hover:border-primary-strong">
         <span>
