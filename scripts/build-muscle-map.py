@@ -1,5 +1,5 @@
 # Genera los recursos del mapa muscular 3D (public/muscles/<cuerpo>/).
-# Uso: python3 -I scripts/build-muscle-map.py <render.jpg> <carpeta_salida>
+# Uso: python3 -I scripts/build-muscle-map.py <render.jpg> <carpeta_salida> <male|female>
 # Entrada: render con la vista frontal a la izquierda y la posterior a la derecha, fondo blanco.
 # Salida: body.webp (fondo transparente) y una máscara por grupo muscular, todas con el mismo recorte.
 # Las coordenadas de REG y FIX corresponden al render de 1024 x 576 usado para cada cuerpo.
@@ -9,7 +9,12 @@ from PIL import Image, ImageDraw, ImageFilter
 from collections import deque
 
 src, out = sys.argv[1], sys.argv[2]
-FIX = [(677, 700, 800, 80, 165), (341, 342, 380, 0, 45), (677, 678, 716, 0, 45), (341, 425, 460, 185, 225)]
+KIND = sys.argv[3] if len(sys.argv) > 3 else "male"
+# Zonas con brillos tan blancos como el fondo que se rellenan con la silueta en espejo (centro, x0, x1, y0, y1).
+FIX = {
+    "male": [(677, 700, 800, 80, 165), (341, 342, 380, 0, 45), (677, 678, 716, 0, 45), (341, 425, 460, 185, 225)],
+    "female": [(677, 688, 742, 80, 140)],
+}[KIND]
 im = Image.open(src).convert("RGB")
 W, H = im.size
 a = np.asarray(im).astype(np.int16)

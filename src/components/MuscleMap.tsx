@@ -13,12 +13,12 @@ type Masked = (typeof MASKED)[number];
 const FULL_BODY: Masked[] = ["chest", "back", "shoulders", "core", "glutes", "quads", "hamstrings"];
 
 /** Cuerpos con imágenes disponibles; si falta uno, se usa el de hombre. */
-const AVAILABLE: Record<MuscleBody, boolean> = { male: true, female: false };
+const AVAILABLE: Record<MuscleBody, boolean> = { male: true, female: true };
 
 /** Proporción de la imagen y posición horizontal (en %) del centro de cada vista. */
 const LAYOUT: Record<MuscleBody, { ratio: string; front: number; back: number }> = {
   male: { ratio: "645 / 562", front: 24, back: 76.1 },
-  female: { ratio: "645 / 562", front: 24, back: 76.1 },
+  female: { ratio: "644 / 562", front: 24.2, back: 76.4 },
 };
 
 const isMasked = (m: MuscleGroup): m is Masked => (MASKED as readonly string[]).includes(m);
