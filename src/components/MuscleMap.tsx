@@ -1,53 +1,59 @@
-// Mapa muscular esquemático (vista frontal y posterior). Ilustración propia, sin imágenes externas.
+// Mapa muscular en 3D (vista frontal y posterior). La base es un render anatómico y cada grupo
+// muscular es una máscara en public/muscles/<cuerpo>/<grupo>.webp, teñida con el color de la plantilla.
+// Gym Sis usa el cuerpo de mujer; Gym Bro y General, el de hombre.
+import type { CSSProperties } from "react";
 import type { MuscleGroup } from "@/types/domain";
 
-type Region = { muscle: MuscleGroup; d: string };
+export type MuscleBody = "female" | "male";
 
-const FRONT: Region[] = [
-  { muscle: "shoulders", d: "M34 46c-6 1-10 6-10 12l8 2c1-5 3-9 7-11zM86 46c6 1 10 6 10 12l-8 2c-1-5-3-9-7-11z" },
-  { muscle: "chest", d: "M40 50h18v16c-7 1-14 0-19-4zM62 50h18l1 12c-5 4-12 5-19 4z" },
-  { muscle: "biceps", d: "M24 62l8 2-2 16-7-2zM96 62l-8 2 2 16 7-2z" },
-  { muscle: "forearms", d: "M22 82l7 2-3 18-6-2zM98 82l-7 2 3 18 6-2z" },
-  { muscle: "core", d: "M44 70h32l-2 30H46z" },
-  { muscle: "quads", d: "M44 106h14l-2 36h-10zM62 106h14l-2 36H64z" },
-  { muscle: "adductors", d: "M56 106h8l-2 20h-4z" },
-  { muscle: "calves", d: "M46 150h9l-1 26h-7zM65 150h9l-1 26h-7z" },
-];
+/** Grupos con máscara propia. "full_body" y "cardio" se resuelven aparte. */
+const MASKED = ["shoulders", "chest", "back", "biceps", "triceps", "forearms", "core", "glutes", "quads", "hamstrings", "calves", "adductors"] as const;
+type Masked = (typeof MASKED)[number];
 
-const BACK: Region[] = [
-  { muscle: "shoulders", d: "M34 46c-6 1-10 6-10 12l8 2c1-5 3-9 7-11zM86 46c6 1 10 6 10 12l-8 2c-1-5-3-9-7-11z" },
-  { muscle: "back", d: "M40 48h40l-4 34H44z" },
-  { muscle: "triceps", d: "M24 62l8 2-2 16-7-2zM96 62l-8 2 2 16 7-2z" },
-  { muscle: "core", d: "M46 84h28v14H46z" },
-  { muscle: "glutes", d: "M44 100h15v16H45zM61 100h15l-1 16H61z" },
-  { muscle: "hamstrings", d: "M45 118h13l-2 26h-10zM62 118h13l-1 26H64z" },
-  { muscle: "calves", d: "M46 150h9l-1 26h-7zM65 150h9l-1 26h-7z" },
-];
+const FULL_BODY: Masked[] = ["chest", "back", "shoulders", "core", "glutes", "quads", "hamstrings"];
 
-const SILHOUETTE = "M60 8a11 11 0 1 1 0 22a11 11 0 1 1 0-22zM42 34h36c10 2 16 10 18 22l4 46-8 2-6-36-2 40H45l-2-40-6 36-8-2 4-46c2-12 8-20 18-22zM45 104h30l-1 76h-12l-2-60-2 60H46z";
+/** Cuerpos con imágenes disponibles; si falta uno, se usa el de hombre. */
+const AVAILABLE: Record<MuscleBody, boolean> = { male: true, female: false };
 
-function Figure({ regions, label, primary, secondary }: { regions: Region[]; label: string; primary: Set<MuscleGroup>; secondary: Set<MuscleGroup> }) {
-  return (
-    <figure className="flex flex-col items-center">
-      <svg viewBox="0 0 120 186" className="h-44 w-auto" aria-hidden>
-        <path d={SILHOUETTE} fill="rgb(var(--surface-2))" stroke="rgb(var(--border))" strokeWidth="1.5" />
-        {regions.map((r, i) => (
-          <path key={i} d={r.d}
-            fill={primary.has(r.muscle) ? "rgb(var(--primary-strong))" : secondary.has(r.muscle) ? "rgb(var(--primary) / .45)" : "transparent"} />
-        ))}
-      </svg>
-      <figcaption className="text-xs text-muted">{label}</figcaption>
-    </figure>
-  );
+/** Proporción de la imagen y posición horizontal (en %) del centro de cada vista. */
+const LAYOUT: Record<MuscleBody, { ratio: string; front: number; back: number }> = {
+  male: { ratio: "645 / 562", front: 24, back: 76.1 },
+  female: { ratio: "645 / 562", front: 24, back: 76.1 },
+};
+
+const isMasked = (m: MuscleGroup): m is Masked => (MASKED as readonly string[]).includes(m);
+
+export function muscleBodyForTheme(theme: string | null | undefined): MuscleBody {
+  return theme === "sis" ? "female" : "male";
 }
 
-export function MuscleMap({ primary, secondary }: { primary: MuscleGroup[]; secondary: MuscleGroup[] }) {
-  const p = new Set(primary.includes("full_body") ? (["chest", "back", "shoulders", "core", "glutes", "quads", "hamstrings"] as MuscleGroup[]) : primary);
-  const s = new Set(secondary);
+function Layer({ src, color, opacity }: { src: string; color: string; opacity: number }) {
+  const mask = `url(${src})`;
+  const style: CSSProperties = {
+    backgroundColor: color, opacity, mixBlendMode: "multiply",
+    maskImage: mask, WebkitMaskImage: mask, maskSize: "100% 100%", WebkitMaskSize: "100% 100%",
+    maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat",
+  };
+  return <span aria-hidden className="pointer-events-none absolute inset-0" style={style} />;
+}
+
+export function MuscleMap({ primary, secondary, body = "male" }: { primary: MuscleGroup[]; secondary: MuscleGroup[]; body?: MuscleBody }) {
+  const kind: MuscleBody = AVAILABLE[body] ? body : "male";
+  const dir = `/muscles/${kind}`;
+  const p = new Set<Masked>(primary.flatMap((m) => (m === "full_body" ? FULL_BODY : isMasked(m) ? [m] : [])));
+  const s = new Set<Masked>(secondary.flatMap((m) => (m === "full_body" ? FULL_BODY : isMasked(m) ? [m] : [])).filter((m) => !p.has(m)));
+  const layout = LAYOUT[kind];
   return (
-    <div className="flex justify-center gap-6" role="img" aria-label="Mapa de músculos trabajados: color intenso para los principales, suave para los secundarios">
-      <Figure regions={FRONT} label="Frente" primary={p} secondary={s} />
-      <Figure regions={BACK} label="Espalda" primary={p} secondary={s} />
-    </div>
+    <figure className="mx-auto w-full max-w-md" role="img" aria-label="Mapa de músculos trabajados: color intenso para los principales, suave para los secundarios">
+      <div className="relative isolate w-full" style={{ aspectRatio: layout.ratio }}>
+        <img src={`${dir}/body.webp`} alt="" className="absolute inset-0 h-full w-full select-none drop-shadow-[0_18px_24px_rgb(0_0_0/0.18)]" draggable={false} />
+        {[...s].map((m) => <Layer key={`s-${m}`} src={`${dir}/${m}.webp`} color="rgb(var(--muscle-soft))" opacity={0.7} />)}
+        {[...p].map((m) => <Layer key={`p-${m}`} src={`${dir}/${m}.webp`} color="rgb(var(--muscle))" opacity={0.92} />)}
+      </div>
+      <figcaption className="relative mt-1 h-4 text-xs text-muted" aria-hidden>
+        <span className="absolute -translate-x-1/2" style={{ left: `${layout.front}%` }}>Frente</span>
+        <span className="absolute -translate-x-1/2" style={{ left: `${layout.back}%` }}>Espalda</span>
+      </figcaption>
+    </figure>
   );
 }

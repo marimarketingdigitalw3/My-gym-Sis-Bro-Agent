@@ -18,6 +18,9 @@
   --muted: 108 102 112;
   --primary: 138 92 255;
   --primary-strong: 109 63 240;
+  /* Mapa muscular 3D: color de los músculos principales y secundarios. */
+  --muscle: 109 63 240;
+  --muscle-soft: 138 92 255;
   --on-primary: 255 255 255;
   --secondary: 241 235 255;
   --accent: 255 210 63;
@@ -52,6 +55,8 @@
   --muted: 140 98 110;
   --primary: 247 160 150;
   --primary-strong: 201 58 98;
+  --muscle: 201 58 98;
+  --muscle-soft: 247 140 150;
   --on-primary: 255 255 255;
   --secondary: 255 233 170;
   --accent: 255 214 120;
@@ -88,6 +93,8 @@
   --muted: 160 166 176;
   --primary: 166 173 183;
   --primary-strong: 240 241 243;
+  --muscle: 122 160 24;
+  --muscle-soft: 176 206 92;
   --on-primary: 14 15 18;
   --secondary: 41 41 41;
   --accent: 201 206 214;
