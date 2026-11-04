@@ -1,0 +1,43 @@
+name: Diagnóstico del coach
+
+# Comprueba, sin exponer la clave, si ANTHROPIC_API_KEY funciona y qué modelos acepta.
+# Ejecútalo a mano desde Actions → "Diagnóstico del coach" → Run workflow.
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Clave presente
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then echo "::error::No hay ANTHROPIC_API_KEY en los secretos del repositorio."; exit 1; fi
+          echo "Clave presente (longitud ${#ANTHROPIC_API_KEY}, prefijo ${ANTHROPIC_API_KEY:0:7}...)"
+      - name: Modelos disponibles
+        run: |
+          code=$(curl -s -o /tmp/models.json -w "%{http_code}" https://api.anthropic.com/v1/models?limit=100 \
+            -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01")
+          echo "GET /v1/models -> $code"
+          if [ "$code" != "200" ]; then cat /tmp/models.json; echo; else
+            python3 -c "import json;print('\n'.join(sorted(m['id'] for m in json.load(open('/tmp/models.json'))['data'])))"
+          fi
+      - name: Petición mínima por modelo
+        run: |
+          for model in claude-opus-5-5 claude-sonnet-5-5 claude-haiku-5-5 claude-sonnet-4-6; do
+            code=$(curl -s -o /tmp/out.json -w "%{http_code}" https://api.anthropic.com/v1/messages \
+              -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
+              -d "{\"model\":\"$model\",\"max_tokens\":32,\"messages\":[{\"role\":\"user\",\"content\":\"Di hola\"}]}")
+            echo "POST /v1/messages ($model, básica) -> $code"
+            [ "$code" != "200" ] && python3 -c "import json;d=json.load(open('/tmp/out.json'));print('  ', d.get('error',d))"
+          done
+      - name: Petición con los mismos parámetros que la función
+        run: |
+          code=$(curl -s -o /tmp/out.json -w "%{http_code}" https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
+            -H "anthropic-beta: server-side-fallback-2026-07-01" \
+            -d '{"model":"claude-opus-5-5","max_tokens":64,"output_config":{"effort":"medium"},"fallbacks":"default","messages":[{"role":"user","content":"Di hola"}]}')
+          echo "POST /v1/messages (opus 5.5 + effort + fallbacks) -> $code"
+          [ "$code" != "200" ] && python3 -c "import json;d=json.load(open('/tmp/out.json'));print('  ', d.get('error',d))"
+          true
