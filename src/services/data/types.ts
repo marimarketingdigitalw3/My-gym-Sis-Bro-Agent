@@ -58,6 +58,10 @@ export interface DataClient {
   photoUrl(path: string, bucket?: PhotoBucket): Promise<string>;
   removePhotos(paths: string[], bucket?: PhotoBucket): Promise<void>;
   sendCoachMessage(conversationId: string | null, message: string, attachments?: string[]): Promise<CoachResponse>;
+  /** Audio de una respuesta del coach (URL reproducible). null si la voz de ElevenLabs no está disponible en este modo. */
+  speakCoachMessage(messageId: string, voice: "female" | "male"): Promise<string | null>;
+  /** Texto de una nota de voz. null si la transcripción de ElevenLabs no está disponible en este modo. */
+  transcribeAudio(audio: Blob): Promise<string | null>;
   deleteAccount(): Promise<void>;
 }
 

@@ -87,6 +87,8 @@ Copia `.env.example` a `.env`.
 | `VITE_SUPABASE_URL` | Frontend | URL del proyecto Supabase |
 | `VITE_SUPABASE_ANON_KEY` | Frontend | Clave pública anon (protegida por RLS) |
 | `ANTHROPIC_API_KEY` | Secreto de Edge Functions | Clave del proveedor de IA. **Nunca** con prefijo `VITE_` |
+| `ELEVENLABS_API_KEY` | Secreto de Edge Functions (opcional) | Voz del coach con ElevenLabs. Sin ella, la app usa la voz y el dictado del navegador |
+| `ELEVENLABS_VOICE_FEMALE` · `ELEVENLABS_VOICE_MALE` | Secretos (opcionales) | Voz de Gym Sis y de Gym Bro/Neutro. Por defecto, voces base de ElevenLabs |
 | `COACH_MODEL` | Secreto (opcional) | Modelo del coach. Por defecto `claude-opus-5-5` |
 | `COACH_RATE_LIMIT_PER_HOUR` | Secreto (opcional) | Mensajes por persona y hora. Por defecto 30 |
 | `ALLOWED_ORIGIN` | Secreto (opcional) | Origen permitido por CORS en las Edge Functions |
@@ -172,6 +174,7 @@ El proyecto incluye `vercel.json` (build de Vite, reescritura SPA hacia `index.h
 - **Fotos**: la app reduce la imagen (`lib/images.ts`), la sube al bucket privado `chat-attachments` (`<uid>/chat/...`) y envía la ruta; la Edge Function la descarga con `service_role` y la pasa al modelo como imagen. Máximo 3 adjuntos por mensaje.
 - **Videos**: la app sube el video (MP4, MOV o WebM, máximo 50 MB) y extrae en el navegador hasta 4 fotogramas JPEG (`<nombre>.f0.jpg` … `.f3.jpg`). El modelo recibe los fotogramas en orden como una secuencia de movimiento; el video queda guardado para verlo en el chat.
 - **Avisos del proveedor**: si la llamada a la IA falla, la respuesta llega del modo de respaldo con un aviso según la causa (sin saldo en la cuenta de Anthropic, clave inválida, límite de peticiones, tiempo de espera). El workflow manual **Diagnóstico del coach** (Actions) comprueba la clave y los modelos sin exponerla.
+- **Voz (ElevenLabs)**: la función `coach-voice` lee en voz alta las respuestas del coach (texto a voz, modelo `eleven_multilingual_v2`) y transcribe las notas de voz (modelo `scribe_v1`). Solo lee mensajes del coach de la propia persona (RLS) y guarda cada audio en caché en `<uid>/voice/` para no gastar créditos dos veces. Gym Sis usa voz de mujer; Gym Bro y Neutro, de hombre. Las voces de la biblioteca de ElevenLabs requieren plan de pago; si la voz configurada falla, se usa la voz base. Sin `ELEVENLABS_API_KEY`, o en el modo demo, la app usa la voz y el dictado del navegador.
 - **Acciones**: el modelo usa herramientas (`_shared/coachActions.ts`, `COACH_TOOLS`). Cada llamada se valida (`actionFromTool`) y se guarda en `chat_messages.actions` como propuesta con etiqueta en español. La app las muestra como tarjetas y la persona las aplica (`services/coachActions.ts`), reutilizando los mismos servicios que las pantallas. Sin IA, `parseActionIntents` reconoce órdenes frecuentes.
 - **Contexto**: agenda semanal con horas e ids de ejercicios, suplementos, ritmo del día y catálogo completo (bloque cacheable).
 - **Migración**: `20261103000001_coach_agent.sql` (columnas `attachments` y `actions`, política de actualización propia y bucket).

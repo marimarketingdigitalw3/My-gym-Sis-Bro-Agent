@@ -254,6 +254,15 @@ export function createLocalDataClient(): DataClient {
       for (const p of paths) if (p.startsWith(`${userId}/`)) await idb<undefined>("readwrite", (s) => s.delete(p));
     },
 
+    // En el modo demo no hay servidor: la app usa la voz y el dictado del navegador.
+    async speakCoachMessage() {
+      return null;
+    },
+
+    async transcribeAudio() {
+      return null;
+    },
+
     async sendCoachMessage(conversationId, message, attachments = []): Promise<CoachResponse> {
       const userId = uid();
       let convId = conversationId;

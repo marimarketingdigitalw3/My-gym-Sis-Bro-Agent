@@ -1,8 +1,8 @@
 import {
-  Apple, ArrowLeft, ArrowUpRight, Camera, Check, Copy, Dumbbell, HeartPulse, History, ImagePlus, Loader2, MessageSquarePlus, Pill, Plus, Send, Video,
+  Apple, ArrowLeft, ArrowUpRight, Camera, Check, Copy, Dumbbell, HeartPulse, History, ImagePlus, Loader2, MessageSquarePlus, Pill, Plus, Send, Video, Mic, Square, Volume2, VolumeX,
   ShieldAlert, Sparkles, Trash2, User, Wand2, X,
 } from "lucide-react";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useBundle, useUserData } from "@/app/providers";
 import { Avatar } from "@/app/AppShell";
@@ -14,6 +14,7 @@ import { db } from "@/services/data";
 import { applyCoachAction } from "@/services/coachActions";
 import { chatImageUrl, deleteConversation, listConversations, listMessages, saveMessageActions, sendCoachMessage, uploadChatAttachment } from "@/services/tracking";
 import type { ChatConversationRow, ChatMessageRow } from "@/types/db";
+import { useCoachVoice } from "./useCoachVoice";
 import { MAX_MESSAGE_CHARS } from "../../../supabase/functions/_shared/coach.ts";
 import { actionSection, isVideoPath, MAX_ATTACHMENTS, MAX_VIDEO_BYTES, parseStoredActions, type StoredAction } from "../../../supabase/functions/_shared/coachActions.ts";
 
@@ -100,6 +101,8 @@ export default function CoachPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const voiceError = useCallback((m: string) => toast(m, "error"), [toast]);
+  const voice = useCoachVoice(bundle.profile.theme === "sis" ? "female" : "male", voiceError);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -155,6 +158,7 @@ export default function CoachPage() {
     const message = text.trim();
     if ((!message && !pending.length) || sending) return;
     if (message.length > MAX_MESSAGE_CHARS) return setError(`El mensaje supera ${MAX_MESSAGE_CHARS} caracteres.`);
+    voice.prime();
     setView("chat");
     setSending(true);
     setError(null);
@@ -178,6 +182,7 @@ export default function CoachPage() {
       }
       const reply = { ...res.message, attachments: res.message.attachments ?? [], actions: parseStoredActions(res.message.actions) };
       setMessages((m) => [...m.map((x) => (x.id === optimistic.id ? { ...x, conversation_id: res.conversationId, attachments } : x)), reply]);
+      if (voice.autoSpeak && reply.id) void voice.speak(reply.id, reply.content);
     } catch (e) {
       setMessages((m) => m.filter((x) => x.id !== optimistic.id));
       setInput(message);
@@ -270,6 +275,20 @@ export default function CoachPage() {
             <IconButton label="Nueva conversación" onClick={newChat} className="border border-border/70 bg-surface"><Plus className="h-4 w-4" /></IconButton>
             <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="sr-only" aria-label="Adjuntar foto o video" onChange={(e) => addFiles(e.target.files)} />
             <IconButton label="Adjuntar foto o video" onClick={() => fileRef.current?.click()} className="border border-border/70 bg-surface"><Camera className="h-4 w-4" /></IconButton>
+            {voice.mic === "idle" && (
+              <IconButton label="Hablar con el coach" disabled={sending} onClick={() => void voice.startMic((t) => void send(t))} className="border border-border/70 bg-surface"><Mic className="h-4 w-4" /></IconButton>
+            )}
+            {voice.mic === "recording" && (
+              <button type="button" onClick={voice.stopMic} aria-label="Detener y enviar nota de voz"
+                className="flex h-10 items-center gap-2 rounded-full bg-danger px-3 text-sm font-semibold text-white shadow-md">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" aria-hidden />
+                <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
+                <span className="tabular-nums">0:{String(voice.seconds).padStart(2, "0")}</span>
+              </button>
+            )}
+            {voice.mic === "transcribing" && (
+              <span className="flex h-10 items-center gap-2 px-2 text-sm text-muted" role="status"><Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Transcribiendo…</span>
+            )}
           </div>
           <button type="submit" aria-label="Enviar" disabled={!canSend}
             className="grid h-11 w-11 place-items-center rounded-full bg-primary-strong text-on-primary shadow-md transition disabled:opacity-40">
@@ -373,7 +392,13 @@ export default function CoachPage() {
       <header className="mb-4 flex items-center justify-between gap-3">
         <IconButton label="Volver al inicio del coach" onClick={() => setView("home")} className={cx("h-12 w-12", glass)}><ArrowLeft className="h-5 w-5" /></IconButton>
         <p className="font-semibold">Gym AI Coach</p>
-        <IconButton label="Historial de conversaciones" onClick={() => setHistoryOpen(true)} className={cx("h-12 w-12", glass)}><History className="h-5 w-5" /></IconButton>
+        <div className="flex items-center gap-2">
+          <IconButton label={voice.autoSpeak ? "Desactivar respuestas en voz alta" : "Activar respuestas en voz alta"} aria-pressed={voice.autoSpeak}
+            onClick={voice.toggleAuto} className={cx("h-12 w-12", glass, voice.autoSpeak && "text-primary-strong")}>
+            {voice.autoSpeak ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+          </IconButton>
+          <IconButton label="Historial de conversaciones" onClick={() => setHistoryOpen(true)} className={cx("h-12 w-12", glass)}><History className="h-5 w-5" /></IconButton>
+        </div>
       </header>
 
       <div className="flex-1 space-y-5 pb-4" aria-live="polite">
@@ -404,6 +429,9 @@ export default function CoachPage() {
                   {m.actions.length > 0 && <ActionCards message={m} busy={applying === m.id} onApply={(ids) => apply(m, ids)} />}
                 </div>
                 <div className="mt-1 flex items-center gap-1 pl-1">
+                  <IconButton label={voice.speakingId === m.id ? "Detener lectura" : "Escuchar respuesta"} onClick={() => void voice.speak(m.id, m.content)} className={cx("h-8 w-8 text-muted", voice.speakingId === m.id && "text-primary-strong")}>
+                    {voice.loadingId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : voice.speakingId === m.id ? <Square className="h-3.5 w-3.5 fill-current" /> : <Volume2 className="h-4 w-4" />}
+                  </IconButton>
                   <IconButton label="Copiar respuesta" onClick={() => copy(m.content)} className="h-8 w-8 text-muted"><Copy className="h-4 w-4" /></IconButton>
                 </div>
               </div>

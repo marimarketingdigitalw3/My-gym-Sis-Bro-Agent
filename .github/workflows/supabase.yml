@@ -6,6 +6,7 @@ name: Supabase
 #   SUPABASE_PROJECT_REF   referencia del proyecto (la parte <ref> de https://<ref>.supabase.co)
 #   SUPABASE_DB_PASSWORD   contraseña de la base de datos del proyecto
 #   ANTHROPIC_API_KEY      opcional: clave del proveedor de IA para Gym AI Coach
+#   ELEVENLABS_API_KEY     opcional: clave de ElevenLabs para la voz del coach
 
 on:
   push:
@@ -38,7 +39,13 @@ jobs:
       - name: Secretos del coach
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: |
+          if [ -n "$ELEVENLABS_API_KEY" ]; then
+            supabase secrets set --yes --project-ref "$PROJECT_REF" ELEVENLABS_API_KEY="$ELEVENLABS_API_KEY"
+          else
+            echo "::warning::Sin ELEVENLABS_API_KEY: la voz del coach usará la voz del navegador."
+          fi
           if [ -n "$ANTHROPIC_API_KEY" ]; then
             supabase secrets set --yes --project-ref "$PROJECT_REF" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
           else
@@ -48,3 +55,4 @@ jobs:
         run: |
           supabase functions deploy coach-chat --yes --project-ref "$PROJECT_REF"
           supabase functions deploy delete-account --yes --project-ref "$PROJECT_REF"
+          supabase functions deploy coach-voice --yes --project-ref "$PROJECT_REF"

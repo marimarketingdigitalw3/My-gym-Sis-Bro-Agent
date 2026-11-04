@@ -151,10 +151,46 @@ export function createSupabaseDataClient(url: string, anonKey: string): DataClie
       return data as CoachResponse;
     },
 
+    async speakCoachMessage(messageId, voice) {
+      const { data, error } = await sb.functions.invoke("coach-voice", { body: { messageId, voice } });
+      if (error) {
+        const info = await voiceError(error);
+        if (info.code === "voice_not_configured") return null;
+        throw new DataError(info.message, "voice_error", info.status);
+      }
+      if (data instanceof Blob) return URL.createObjectURL(data);
+      return (data as { url?: string } | null)?.url ?? null;
+    },
+
+    async transcribeAudio(audio) {
+      const form = new FormData();
+      const ext = audio.type.includes("mp4") ? "m4a" : audio.type.includes("ogg") ? "ogg" : "webm";
+      form.append("audio", new File([audio], `nota.${ext}`, { type: audio.type || "audio/webm" }));
+      const { data, error } = await sb.functions.invoke("coach-voice", { body: form });
+      if (error) {
+        const info = await voiceError(error);
+        if (info.code === "voice_not_configured") return null;
+        throw new DataError(info.message, "voice_error", info.status);
+      }
+      return ((data as { text?: string } | null)?.text ?? "").trim();
+    },
+
     async deleteAccount() {
       const { error } = await sb.functions.invoke("delete-account", { body: { confirm: "BORRAR" } });
       if (error) throw new DataError("No se pudo borrar la cuenta. Inténtalo de nuevo.");
       await sb.auth.signOut();
     },
   };
+}
+
+/** Lee el código y el mensaje de error de la función de voz. */
+async function voiceError(error: unknown): Promise<{ code?: string; message: string; status?: number }> {
+  const fallback = "La voz del coach no está disponible en este momento.";
+  if (!(error instanceof FunctionsHttpError)) return { message: fallback };
+  try {
+    const body = await error.context.json();
+    return { code: body.code, message: body.error ?? fallback, status: error.context.status };
+  } catch {
+    return { message: fallback, status: error.context.status };
+  }
 }
