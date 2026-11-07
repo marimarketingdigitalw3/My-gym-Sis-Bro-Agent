@@ -11,6 +11,8 @@ export const EXERCISE_MEDIA: Record<string, ExerciseMediaEntry> = {
   "band-lat-pulldown": { start: "gymbot-band-lat-pulldown-start.webp", peak: "gymbot-band-lat-pulldown-peak.webp", source: "gymbot-band-lat-pulldown" },
   "pallof-press-band": { start: "gymbot-pallof-press-band-start.webp", peak: "gymbot-pallof-press-band-peak.webp", source: "gymbot-pallof-press-band" },
   "band-shoulder-dislocate": { start: "gymbot-band-shoulder-dislocate-start.webp", peak: "gymbot-band-shoulder-dislocate-peak.webp", source: "gymbot-band-shoulder-dislocate" },
+  "thoracic-rotation": { start: "gymbot-thoracic-rotation-start.webp", peak: "gymbot-thoracic-rotation-peak.webp", source: "gymbot-thoracic-rotation" },
+  "prone-ytw-raise": { start: "gymbot-prone-ytw-raise-start.webp", peak: "gymbot-prone-ytw-raise-peak.webp", source: "gymbot-prone-ytw-raise" },
   "band-hip-abduction": { start: "banded-seated-hip-abduction-start.webp", peak: "banded-seated-hip-abduction-peak.webp", source: "banded-seated-hip-abduction" },
   "band-pull-apart": { start: "band-pull-apart-start.webp", peak: "band-pull-apart-peak.webp", source: "band-pull-apart" },
   "barbell-back-squat": { start: "squat-start.webp", peak: "squat-peak.webp", source: "squat" },
