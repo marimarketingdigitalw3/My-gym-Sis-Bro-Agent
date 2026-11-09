@@ -16,6 +16,7 @@ export const EXERCISE_MEDIA: Record<string, ExerciseMediaEntry> = {
   "cable-woodchop": { start: "gymbot-cable-woodchop-start.webp", peak: "gymbot-cable-woodchop-peak.webp", source: "gymbot-cable-woodchop" },
   "prone-lateral-raise": { start: "gymbot-prone-lateral-raise-start.webp", peak: "gymbot-prone-lateral-raise-peak.webp", source: "gymbot-prone-lateral-raise" },
   "ankle-mobility": { start: "gymbot-ankle-mobility-start.webp", peak: "gymbot-ankle-mobility-peak.webp", source: "gymbot-ankle-mobility" },
+  "towel-isometric-curl": { start: "gymbot-towel-isometric-curl-start.webp", peak: "gymbot-towel-isometric-curl-peak.webp", source: "gymbot-towel-isometric-curl" },
   "band-hip-abduction": { start: "banded-seated-hip-abduction-start.webp", peak: "banded-seated-hip-abduction-peak.webp", source: "banded-seated-hip-abduction" },
   "band-pull-apart": { start: "band-pull-apart-start.webp", peak: "band-pull-apart-peak.webp", source: "band-pull-apart" },
   "barbell-back-squat": { start: "squat-start.webp", peak: "squat-peak.webp", source: "squat" },
